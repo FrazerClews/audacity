@@ -172,7 +172,7 @@ def tagjoin(L):
             items = d.items()
             items.sort()
             for (key, value) in items:
-                if value != None:
+                if value is not None:
                     if '"' in value and "'" in value:
                         raise ValueError(
                             "attribute value contains both single"
@@ -208,7 +208,7 @@ def _ignore_tag_index(s, i):
     the index.  Otherwise, return C{-1}.
     """
     for (j, (a, b)) in _enumerate(_IGNORE_TAGS):
-        if s[i : i + len(a) + 1].lower() == "<" + a:
+        if s[i: i + len(a) + 1].lower() == "<" + a:
             return j
     return -1
 
@@ -243,7 +243,7 @@ def _html_split(s):
         c = s[i]
         if c == "<":
             # Left bracket, handle various cases.
-            if s[i : i + len(_BEGIN_COMMENT)].startswith(_BEGIN_COMMENT):
+            if s[i: i + len(_BEGIN_COMMENT)].startswith(_BEGIN_COMMENT):
                 # HTML begin comment tag, '<!--'.  Scan for '-->'.
                 i2 = s.find(_END_COMMENT, i)
                 if i2 < 0:
@@ -252,9 +252,9 @@ def _html_split(s):
                     break
                 else:
                     # Append the comment.
-                    L.append(s[i : i2 + len(_END_COMMENT)])
+                    L.append(s[i: i2 + len(_END_COMMENT)])
                     i = i2 + len(_END_COMMENT)
-            elif s[i : i + len(_BEGIN_CDATA)].startswith(_BEGIN_CDATA):
+            elif s[i: i + len(_BEGIN_CDATA)].startswith(_BEGIN_CDATA):
                 # XHTML begin CDATA tag.  Scan for ']]>'.
                 i2 = s.find(_END_CDATA, i)
                 if i2 < 0:
@@ -263,7 +263,7 @@ def _html_split(s):
                     break
                 else:
                     # Append the CDATA.
-                    L.append(s[i : i2 + len(_END_CDATA)])
+                    L.append(s[i: i2 + len(_END_CDATA)])
                     i = i2 + len(_END_CDATA)
             else:
                 # Regular HTML tag.  Scan for '>'.
@@ -295,7 +295,7 @@ def _html_split(s):
                     break
                 else:
                     # Append the tag.
-                    L.append(s[i : i2 + 1])
+                    L.append(s[i: i2 + 1])
                     i = i2 + 1
 
                 # Check whether we found a special ignore tag, eg '<script>'
@@ -365,7 +365,7 @@ def _shlex_split(s):
             c = re.compile(r'[^ \t\n\r\f\v"\']+\s*\=\s*"[^"]*"')
             m = c.match(s, i)
             if m:
-                ans.append(s[i : m.end()])
+                ans.append(s[i: m.end()])
                 i = m.end()
                 continue
 
@@ -373,7 +373,7 @@ def _shlex_split(s):
             c = re.compile(r'[^ \t\n\r\f\v"\']+\s*\=\s*\'[^\']*\'')
             m = c.match(s, i)
             if m:
-                ans.append(s[i : m.end()])
+                ans.append(s[i: m.end()])
                 i = m.end()
                 continue
 
@@ -381,7 +381,7 @@ def _shlex_split(s):
             c = re.compile(r'[^ \t\n\r\f\v"\']+\s*\=\s*[^ \t\n\r\f\v"\']*')
             m = c.match(s, i)
             if m:
-                ans.append(s[i : m.end()])
+                ans.append(s[i: m.end()])
                 i = m.end()
                 continue
 
@@ -389,7 +389,7 @@ def _shlex_split(s):
             c = re.compile(r'[^ \t\n\r\f\v"\']+')
             m = c.match(s, i)
             if m:
-                ans.append(s[i : m.end()])
+                ans.append(s[i: m.end()])
                 i = m.end()
                 continue
 
@@ -590,9 +590,9 @@ def _test_tag_dict():
     (a, b, c) = _tag_dict(s)
     assert a == {"text": "hi you", "bg": "val", "e": "5", "name": None}
     for key in a.keys():
-        assert s[b[key][0] : b[key][1]] == key
-        if a[key] != None:
-            assert s[c[key][0] : c[key][1]] == a[key]
+        assert s[b[key][0]: b[key][1]] == key
+        if a[key] is not None:
+            assert s[c[key][0]: c[key][1]] == a[key]
 
 
 def _full_tag_extract(s):
@@ -1047,7 +1047,7 @@ def _tuple_replace(s, Lindices, Lreplace):
         len1 = Lindices[i][1] - Lindices[i][0]
         len2 = len(Lreplace[i])
 
-        ans.append(s[j : Lindices[i][0] + offset])
+        ans.append(s[j: Lindices[i][0] + offset])
         ans.append(Lreplace[i])
 
         j = Lindices[i][1]
@@ -1269,7 +1269,7 @@ class URLMatch:
         self.in_html = in_html
         self.in_css = in_css
 
-        if siteurl != None:
+        if siteurl is not None:
             self.url = urlparse.urljoin(siteurl, self.url)
 
         self.tag_attr = tag_attr
@@ -1565,10 +1565,10 @@ def _test_tagextract(str_class=str):
         for (i, item) in _enumerate(L):
             if isinstance(item, _HTMLTag):
                 for key in item.attrs.keys():
-                    assert s[item.key_pos[key][0] : item.key_pos[key][1]].lower() == key
-                    if item.attrs[key] != None:
+                    assert s[item.key_pos[key][0]: item.key_pos[key][1]].lower() == key
+                    if item.attrs[key] is not None:
                         assert (
-                            s[item.value_pos[key][0] : item.value_pos[key][1]]
+                            s[item.value_pos[key][0]: item.value_pos[key][1]]
                             == item.attrs[key]
                         )
 
@@ -1702,7 +1702,7 @@ def _test_urlextract(str_class=str):
     L = urlextract(s, mimetype="text/css")
     L2 = [x.url for x in L]
     assert L2 == f([" blah3", "blah4", "blah5", " blah8 "])
-    assert [s[x.start : x.end] == x.url for x in L].count(False) == 0
+    assert [s[x.start: x.end] == x.url for x in L].count(False) == 0
 
     # Test CSS more.
     s = doc3
@@ -1723,14 +1723,14 @@ def _test_urlextract(str_class=str):
             "foo7",
         ]
     )
-    assert [s[x.start : x.end] == x.url for x in L].count(False) == 0
+    assert [s[x.start: x.end] == x.url for x in L].count(False) == 0
 
     # Test CSS even more.
     s = doc4
     L = urlextract(s, mimetype="text/css")
     L2 = [x.url for x in L]
     assert L2 == f(["foo", "bar", "foo2", "bar2", "foo3"])
-    assert [s[x.start : x.end] == x.url for x in L].count(False) == 0
+    assert [s[x.start: x.end] == x.url for x in L].count(False) == 0
 
     # Test HTML.
     s = doc2
@@ -1752,7 +1752,7 @@ def _test_urlextract(str_class=str):
     assert L2 == L3 == ans
 
     for i in range(len(L)):
-        assert s[L[i].start : L[i].end] == L[i].url
+        assert s[L[i].start: L[i].end] == L[i].url
 
     # Test HTML more.
     n = 100
@@ -1762,7 +1762,7 @@ def _test_urlextract(str_class=str):
     L4 = [x.url for x in L3]
     assert L4 == L2 * n
     for i in range(len(L3)):
-        assert s2[L3[i].start : L3[i].end] == L3[i].url
+        assert s2[L3[i].start: L3[i].end] == L3[i].url
 
     # Test HTML w/ siteurl.
     base = f("http://www.python.org/~guido/")
@@ -1792,7 +1792,7 @@ def _test_urlextract(str_class=str):
     L = urlextract(s)
     L2 = [x.url for x in L]
     assert L2 == f(["foo", "a.gif", "bar.css", "b.html"])
-    assert [s[x.start : x.end] == x.url for x in L].count(False) == 0
+    assert [s[x.start: x.end] == x.url for x in L].count(False) == 0
 
 
 def _python_has_unicode():
