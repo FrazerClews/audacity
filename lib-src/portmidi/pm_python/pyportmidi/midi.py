@@ -13,22 +13,22 @@ portmidi supports (currently windows, OSX, and linux).
 import atexit
 
 
-
 _init = False
 _pypm = None
 
 
-__all__ = [ "Input",
-            "MidiException",
-            "Output",
-            "get_count",
-            "get_default_input_id",
-            "get_default_output_id",
-            "get_device_info",
-            "init",
-            "quit",
-            "time",
-           ]
+__all__ = [
+    "Input",
+    "MidiException",
+    "Output",
+    "get_count",
+    "get_default_input_id",
+    "get_default_output_id",
+    "get_device_info",
+    "init",
+    "quit",
+    "time",
+]
 
 __theclasses__ = ["Input", "Output"]
 
@@ -44,6 +44,7 @@ def init():
     global _init, _pypm
     if not _init:
         import pyportmidi._pyportmidi
+
         _pypm = pyportmidi._pyportmidi
 
         _pypm.Initialize()
@@ -67,9 +68,11 @@ def quit():
         _init = False
         del _pypm
 
+
 def _check_init():
     if not _init:
         raise RuntimeError("pyportmidi not initialised.")
+
 
 def get_count():
     """gets the number of devices.
@@ -80,8 +83,6 @@ def get_count():
     """
     _check_init()
     return _pypm.CountDevices()
-
-
 
 
 def get_default_input_id():
@@ -131,8 +132,6 @@ def get_default_input_id():
     (the input or output device with the lowest PmDeviceID).
     """
     return _pypm.GetDefaultInputDeviceID()
-
-
 
 
 def get_default_output_id():
@@ -198,7 +197,7 @@ def get_device_info(an_id):
     If the id is out of range, the function returns None.
     """
     _check_init()
-    return _pypm.GetDeviceInfo(an_id) 
+    return _pypm.GetDeviceInfo(an_id)
 
 
 class Input(object):
@@ -216,10 +215,12 @@ class Input(object):
         waiting to be read using Input.read().
         """
         _check_init()
- 
+
         if device_id == -1:
-            raise MidiException("Device id is -1, not a valid output id.  -1 usually means there were no default Output devices.")
-            
+            raise MidiException(
+                "Device id is -1, not a valid output id.  -1 usually means there were no default Output devices."
+            )
+
         try:
             r = get_device_info(device_id)
         except TypeError:
@@ -227,7 +228,7 @@ class Input(object):
         except OverflowError:
             raise OverflowError("long int too large to convert to int")
 
-        # and now some nasty looking error checking, to provide nice error 
+        # and now some nasty looking error checking, to provide nice error
         #   messages to the kind, lovely, midi using people of whereever.
         if r:
             interf, name, input, output, opened = r
@@ -239,20 +240,17 @@ class Input(object):
                 self.device_id = device_id
 
             elif output:
-                raise MidiException("Device id given is not a valid input id, it is an output id.")
+                raise MidiException(
+                    "Device id given is not a valid input id, it is an output id."
+                )
             else:
                 raise MidiException("Device id given is not a valid input id.")
         else:
             raise MidiException("Device id invalid, out of range.")
 
-
-
-
     def _check_open(self):
         if self._input is None:
             raise MidiException("midi not open.")
-
-
 
     def close(self):
         """ closes a midi stream, flushing any pending buffers.
@@ -266,8 +264,6 @@ class Input(object):
             self._input.Close()
         self._input = None
 
-
-
     def read(self, num_events):
         """reads num_events midi events from the buffer.
         Input.read(num_events): return midi_event_list
@@ -279,7 +275,6 @@ class Input(object):
         _check_init()
         self._check_open()
         return self._input.Read(num_events)
-
 
     def poll(self):
         """returns true if there's data, or false if not.
@@ -297,9 +292,7 @@ class Input(object):
             return False
         else:
             err_text = GetErrorText(r)
-            raise MidiException( (r, err_text) )
-
-
+            raise MidiException((r, err_text))
 
 
 class Output(object):
@@ -330,7 +323,7 @@ class Output(object):
 
     """
 
-    def __init__(self, device_id, latency = 0, buffer_size = 4096):
+    def __init__(self, device_id, latency=0, buffer_size=4096):
         """Output(device_id)
         Output(device_id, latency = 0)
         Output(device_id, buffer_size = 4096)
@@ -355,13 +348,15 @@ class Output(object):
         to synchronize midi data to audio data by matching midi latency to 
         the audio buffer latency.
         """
-     
+
         _check_init()
         self._aborted = 0
 
         if device_id == -1:
-            raise MidiException("Device id is -1, not a valid output id.  -1 usually means there were no default Output devices.")
-            
+            raise MidiException(
+                "Device id is -1, not a valid output id.  -1 usually means there were no default Output devices."
+            )
+
         try:
             r = get_device_info(device_id)
         except TypeError:
@@ -369,7 +364,7 @@ class Output(object):
         except OverflowError:
             raise OverflowError("long int too large to convert to int")
 
-        # and now some nasty looking error checking, to provide nice error 
+        # and now some nasty looking error checking, to provide nice error
         #   messages to the kind, lovely, midi using people of whereever.
         if r:
             interf, name, input, output, opened = r
@@ -381,7 +376,9 @@ class Output(object):
                 self.device_id = device_id
 
             elif input:
-                raise MidiException("Device id given is not a valid output id, it is an input id.")
+                raise MidiException(
+                    "Device id given is not a valid output id, it is an input id."
+                )
             else:
                 raise MidiException("Device id given is not a valid output id.")
         else:
@@ -393,7 +390,6 @@ class Output(object):
 
         if self._aborted:
             raise MidiException("midi aborted.")
-
 
     def close(self):
         """ closes a midi stream, flushing any pending buffers.
@@ -423,10 +419,6 @@ class Output(object):
             self._output.Abort()
         self._aborted = 1
 
-
-
-
-
     def write(self, data):
         """writes a list of midi data to the Output
         Output.write(data)
@@ -454,8 +446,7 @@ class Output(object):
 
         self._output.Write(data)
 
-
-    def write_short(self, status, data1 = 0, data2 = 0):
+    def write_short(self, status, data1=0, data2=0):
         """write_short(status <, data1><, data2>)
         Output.write_short(status)
         Output.write_short(status, data1 = 0, data2 = 0)
@@ -474,7 +465,6 @@ class Output(object):
         self._check_open()
         self._output.WriteShort(status, data1, data2)
 
-
     def write_sys_ex(self, when, msg):
         """writes a timestamped system-exclusive midi message.
         Output.write_sys_ex(when, msg)
@@ -492,8 +482,7 @@ class Output(object):
         self._check_open()
         self._output.WriteSysEx(when, msg)
 
-
-    def note_on(self, note, velocity=None, channel = 0):
+    def note_on(self, note, velocity=None, channel=0):
         """turns a midi note on.  Note must be off.
         Output.note_on(note, velocity=None, channel = 0)
 
@@ -506,9 +495,9 @@ class Output(object):
         if not (0 <= channel <= 15):
             raise ValueError("Channel not between 0 and 15.")
 
-        self.write_short(0x90+channel, note, velocity)
+        self.write_short(0x90 + channel, note, velocity)
 
-    def note_off(self, note, velocity=None, channel = 0):
+    def note_off(self, note, velocity=None, channel=0):
         """turns a midi note off.  Note must be on.
         Output.note_off(note, velocity=None, channel = 0)
 
@@ -523,8 +512,7 @@ class Output(object):
 
         self.write_short(0x80 + channel, note, velocity)
 
-
-    def set_instrument(self, instrument_id, channel = 0):
+    def set_instrument(self, instrument_id, channel=0):
         """select an instrument, with a value between 0 and 127
         Output.set_instrument(instrument_id, channel = 0)
 
@@ -535,8 +523,7 @@ class Output(object):
         if not (0 <= channel <= 15):
             raise ValueError("Channel not between 0 and 15.")
 
-        self.write_short(0xc0+channel, instrument_id)
-
+        self.write_short(0xC0 + channel, instrument_id)
 
 
 def time():
@@ -548,19 +535,12 @@ def time():
     return _pypm.Time()
 
 
-
-
-
-
-
-
 class MidiException(Exception):
     """MidiException(errno) that can be raised.
     """
+
     def __init__(self, value):
         self.parameter = value
+
     def __str__(self):
         return repr(self.parameter)
-
-
-

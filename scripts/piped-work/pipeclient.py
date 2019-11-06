@@ -78,19 +78,19 @@ import argparse
 
 
 if sys.version_info[0] < 3 and sys.version_info[1] < 7:
-    sys.exit('PipeClient Error: Python 2.7 or later required')
+    sys.exit("PipeClient Error: Python 2.7 or later required")
 
 # Platform specific constants
-if sys.platform == 'win32':
-    WRITE_NAME = '\\\\.\\pipe\\ToSrvPipe'
-    READ_NAME = '\\\\.\\pipe\\FromSrvPipe'
-    EOL = '\r\n\0'
+if sys.platform == "win32":
+    WRITE_NAME = "\\\\.\\pipe\\ToSrvPipe"
+    READ_NAME = "\\\\.\\pipe\\FromSrvPipe"
+    EOL = "\r\n\0"
 else:
     # Linux or Mac
-    PIPE_BASE = '/tmp/audacity_script_pipe.'
-    WRITE_NAME = PIPE_BASE + 'to.' + str(os.getuid())
-    READ_NAME = PIPE_BASE + 'from.' + str(os.getuid())
-    EOL = '\n'
+    PIPE_BASE = "/tmp/audacity_script_pipe."
+    WRITE_NAME = PIPE_BASE + "to." + str(os.getuid())
+    READ_NAME = PIPE_BASE + "from." + str(os.getuid())
+    EOL = "\n"
 
 
 class PipeClient(object):
@@ -138,7 +138,7 @@ class PipeClient(object):
         self.timer = False
         self._start_time = 0
         self._write_pipe = None
-        self.reply = ''
+        self.reply = ""
         if not self._write_pipe:
             self._write_thread_start()
         self._read_thread_start()
@@ -153,11 +153,11 @@ class PipeClient(object):
         # Allow a little time for connection to be made.
         time.sleep(0.1)
         if not self._write_pipe:
-            sys.exit('PipeClientError: Write pipe cannot be opened.')
+            sys.exit("PipeClientError: Write pipe cannot be opened.")
 
     def _write_pipe_open(self):
         """Open _write_pipe."""
-        self._write_pipe = open(WRITE_NAME, 'w')
+        self._write_pipe = open(WRITE_NAME, "w")
 
     def _read_thread_start(self):
         """Start read_pipe thread."""
@@ -181,20 +181,20 @@ class PipeClient(object):
 
         """
         self.timer = timer
-        print('Sending command:', command)
+        print("Sending command:", command)
         self._write_pipe.write(command + EOL)
         # Check that read pipe is alive
         if PipeClient.reader_pipe_broken.isSet():
-            sys.exit('PipeClient: Read-pipe error.')
+            sys.exit("PipeClient: Read-pipe error.")
         try:
             self._write_pipe.flush()
             if self.timer:
                 self._start_time = time.time()
-            self.reply = ''
+            self.reply = ""
             PipeClient.reply_ready.clear()
         except IOError as err:
             if err.errno == errno.EPIPE:
-                sys.exit('PipeClient: Write-pipe error.')
+                sys.exit("PipeClient: Write-pipe error.")
             else:
                 raise
 
@@ -202,25 +202,25 @@ class PipeClient(object):
         """Read FIFO in worker thread."""
         # Thread will wait at this read until it connects.
         # Connection should occur as soon as _write_pipe has connected.
-        read_pipe = open(READ_NAME, 'r')
-        message = ''
+        read_pipe = open(READ_NAME, "r")
+        message = ""
         while True:
             line = read_pipe.readline()
             # Stop timer as soon as we get first line of response.
             stop_time = time.time()
-            while line != '\n':
+            while line != "\n":
                 message += line
                 line = read_pipe.readline()
-                if line == '':
+                if line == "":
                     # No data in read_pipe indicates that the pipe is broken
                     # (Audacity may have crashed).
                     PipeClient.reader_pipe_broken.set()
             if self.timer:
                 xtime = (stop_time - self._start_time) * 1000
-                message += 'Execution time: {0:.2f}ms'.format(xtime)
+                message += "Execution time: {0:.2f}ms".format(xtime)
             self.reply = message
             PipeClient.reply_ready.set()
-            message = ''
+            message = ""
         read_pipe.close()
 
     def read(self):
@@ -235,32 +235,47 @@ class PipeClient(object):
 
         """
         if not PipeClient.reply_ready.isSet():
-            return ''
+            return ""
         else:
             return self.reply
 
 
 def bool_from_string(strval):
     """Return boolean value from string"""
-    if strval.lower() in ('true', 't', '1', 'yes', 'y'):
+    if strval.lower() in ("true", "t", "1", "yes", "y"):
         return True
-    elif strval.lower() in ('false', 'f', '0', 'no', 'n'):
+    elif strval.lower() in ("false", "f", "0", "no", "n"):
         return False
     else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
+        raise argparse.ArgumentTypeError("Boolean value expected.")
+
 
 def main():
     """Interactive command-line for PipeClient"""
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-t', '--timeout', type=float, metavar='', default=10,
-                        help="timeout for reply in seconds (default: 10")
-    parser.add_argument('-s', '--show-time', metavar='True/False',
-                        nargs='?', type=bool_from_string,
-                        const='t', default='t', dest='show',
-                        help='show command execution time (default: True)')
-    parser.add_argument('-d', '--docs', action='store_true',
-                        help='show documentation and exit')
+    parser.add_argument(
+        "-t",
+        "--timeout",
+        type=float,
+        metavar="",
+        default=10,
+        help="timeout for reply in seconds (default: 10",
+    )
+    parser.add_argument(
+        "-s",
+        "--show-time",
+        metavar="True/False",
+        nargs="?",
+        type=bool_from_string,
+        const="t",
+        default="t",
+        dest="show",
+        help="show command execution time (default: True)",
+    )
+    parser.add_argument(
+        "-d", "--docs", action="store_true", help="show documentation and exit"
+    )
     args = parser.parse_args()
 
     if args.docs:
@@ -269,28 +284,29 @@ def main():
 
     client = PipeClient()
     while True:
-        reply = ''
+        reply = ""
         if sys.version_info[0] < 3:
-            #pylint: disable=undefined-variable
+            # pylint: disable=undefined-variable
             message = raw_input("\nEnter command or 'Q' to quit: ")
         else:
-            message = input( #pylint: disable=bad-builtin
-                "\nEnter command or 'Q' to quit: ")
+            message = input(  # pylint: disable=bad-builtin
+                "\nEnter command or 'Q' to quit: "
+            )
         start = time.time()
-        if message.upper() == 'Q':
+        if message.upper() == "Q":
             sys.exit(0)
-        elif message == '':
+        elif message == "":
             pass
         else:
             client.write(message, timer=args.show)
-            while reply == '':
+            while reply == "":
                 time.sleep(0.1)  # allow time for reply
                 if time.time() - start > args.timeout:
-                    reply = 'PipeClient: Reply timed-out.'
+                    reply = "PipeClient: Reply timed-out."
                 else:
                     reply = client.read()
             print(reply)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

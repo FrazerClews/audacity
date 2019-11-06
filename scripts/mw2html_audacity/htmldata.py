@@ -1,4 +1,3 @@
-
 """
 Manipulate HTML or XHTML documents.
 
@@ -17,13 +16,13 @@ See the L{examples} for a quick start.
 
 """
 
-__version__ = '1.1.1'
+__version__ = "1.1.1"
 
-__all__ = ['examples', 'tagextract', 'tagjoin', 'urlextract',
-           'urljoin', 'URLMatch']
+__all__ = ["examples", "tagextract", "tagjoin", "urlextract", "urljoin", "URLMatch"]
 
 # Define True and False for Python < 2.2.
 import sys
+
 if sys.version_info[:3] < (2, 2, 0):
     exec "True = 1; False = 0"
 
@@ -39,27 +38,31 @@ import urlparse
 import types
 
 # Translate text between these strings as plain text (not HTML).
-_IGNORE_TAGS = [('script', '/script'),
-               ('style', '/style')]
+_IGNORE_TAGS = [("script", "/script"), ("style", "/style")]
 
 # Special tags where we have to look for _END_X as part of the
 # HTML/XHTML parsing rules.
-_BEGIN_COMMENT = '<!--'
-_END_COMMENT = '-->'
-_BEGIN_CDATA = '<![CDATA['
-_END_CDATA = ']]>'
+_BEGIN_COMMENT = "<!--"
+_END_COMMENT = "-->"
+_BEGIN_CDATA = "<![CDATA["
+_END_CDATA = "]]>"
 
 # Mime types that can be parsed as HTML or HTML-like.
-_HTML_MIMETYPES = ['text/html', 'application/xhtml',
-                   'application/xhtml+xml', 'text/xml',
-                   'application/xml']
+_HTML_MIMETYPES = [
+    "text/html",
+    "application/xhtml",
+    "application/xhtml+xml",
+    "text/xml",
+    "application/xml",
+]
 
 # Mime types that can be parsed as CSS.
-_CSS_MIMETYPES = ['text/css']
+_CSS_MIMETYPES = ["text/css"]
 
 # -------------------------------------------------------------------
 # HTML <-> Data structure
 # -------------------------------------------------------------------
+
 
 def tagextract(doc):
     """
@@ -118,11 +121,13 @@ def tagextract(doc):
             L[i] = (L[i].name, L[i].attrs)
     return L
 
+
 def _is_str(s):
     """
     True iff s is a string (checks via duck typing).
     """
-    return hasattr(s, 'capitalize')
+    return hasattr(s, "capitalize")
+
 
 def tagjoin(L):
     """
@@ -142,46 +147,49 @@ def tagjoin(L):
     double-quotes.
     """
     if _is_str(L):
-        raise ValueError('got string arg, expected non-string iterable')
+        raise ValueError("got string arg, expected non-string iterable")
     ans = []
     for item in L:
         # Check for string using duck typing.
         if _is_str(item):
             # Handle plain text.
             ans.append(item)
-        elif item[0] == '--':
+        elif item[0] == "--":
             # Handle closing comment.
-            ans.append('-->')
-        elif item[0] == '!--':
+            ans.append("-->")
+        elif item[0] == "!--":
             # Handle opening comment.
-            ans.append('<!--')
+            ans.append("<!--")
         else:
             # Handle regular HTML tag.
             (name, d) = item
-            if name[-1:] == '/':
-                rslash = ' /'
+            if name[-1:] == "/":
+                rslash = " /"
                 name = name[:-1]
             else:
-                rslash = ''
+                rslash = ""
             tag_items = []
             items = d.items()
             items.sort()
             for (key, value) in items:
                 if value != None:
                     if '"' in value and "'" in value:
-                        raise ValueError('attribute value contains both single' +
-                                         ' and double quotes')
+                        raise ValueError(
+                            "attribute value contains both single"
+                            + " and double quotes"
+                        )
                     elif '"' in value:
                         tag_items.append(key + "='" + value + "'")
                     else:
                         tag_items.append(key + '="' + value + '"')
                 else:
                     tag_items.append(key)
-            tag_items = ' '.join(tag_items)
-            if tag_items != '':
-                tag_items = ' ' + tag_items
-            ans.append('<' + name + tag_items + rslash + '>')
-    return ''.join(ans)
+            tag_items = " ".join(tag_items)
+            if tag_items != "":
+                tag_items = " " + tag_items
+            ans.append("<" + name + tag_items + rslash + ">")
+    return "".join(ans)
+
 
 def _enumerate(L):
     """
@@ -191,6 +199,7 @@ def _enumerate(L):
     """
     return zip(range(len(L)), L)
 
+
 def _ignore_tag_index(s, i):
     """
     Helper routine: Find index within C{_IGNORE_TAGS}, or C{-1}.
@@ -199,9 +208,10 @@ def _ignore_tag_index(s, i):
     the index.  Otherwise, return C{-1}.
     """
     for (j, (a, b)) in _enumerate(_IGNORE_TAGS):
-        if s[i:i + len(a) + 1].lower() == '<' + a:
+        if s[i : i + len(a) + 1].lower() == "<" + a:
             return j
-    return - 1
+    return -1
+
 
 def _html_split(s):
     """
@@ -228,12 +238,12 @@ def _html_split(s):
     s_lower = s.lower()
     L = []
 
-    i = 0               # Index of char being processed
+    i = 0  # Index of char being processed
     while i < len(s):
         c = s[i]
-        if c == '<':
+        if c == "<":
             # Left bracket, handle various cases.
-            if s[i:i + len(_BEGIN_COMMENT)].startswith(_BEGIN_COMMENT):
+            if s[i : i + len(_BEGIN_COMMENT)].startswith(_BEGIN_COMMENT):
                 # HTML begin comment tag, '<!--'.  Scan for '-->'.
                 i2 = s.find(_END_COMMENT, i)
                 if i2 < 0:
@@ -242,9 +252,9 @@ def _html_split(s):
                     break
                 else:
                     # Append the comment.
-                    L.append(s[i:i2 + len(_END_COMMENT)])
+                    L.append(s[i : i2 + len(_END_COMMENT)])
                     i = i2 + len(_END_COMMENT)
-            elif s[i:i + len(_BEGIN_CDATA)].startswith(_BEGIN_CDATA):
+            elif s[i : i + len(_BEGIN_CDATA)].startswith(_BEGIN_CDATA):
                 # XHTML begin CDATA tag.  Scan for ']]>'.
                 i2 = s.find(_END_CDATA, i)
                 if i2 < 0:
@@ -253,7 +263,7 @@ def _html_split(s):
                     break
                 else:
                     # Append the CDATA.
-                    L.append(s[i:i2 + len(_END_CDATA)])
+                    L.append(s[i : i2 + len(_END_CDATA)])
                     i = i2 + len(_END_CDATA)
             else:
                 # Regular HTML tag.  Scan for '>'.
@@ -267,15 +277,15 @@ def _html_split(s):
                         in_quot2 = not in_quot2
                         # Only turn on double quote if it's in a realistic place.
                         if in_quot2 and not in_quot1:
-                            if i2 > 0 and s[i2 - 1] not in [' ', '\t', '=']:
+                            if i2 > 0 and s[i2 - 1] not in [" ", "\t", "="]:
                                 in_quot2 = False
                     elif c2 == "'" and not in_quot2:
                         in_quot1 = not in_quot1
                         # Only turn on single quote if it's in a realistic place.
                         if in_quot1 and not in_quot2:
-                            if i2 > 0 and s[i2 - 1] not in [' ', '\t', '=']:
+                            if i2 > 0 and s[i2 - 1] not in [" ", "\t", "="]:
                                 in_quot1 = False
-                    elif c2 == '>' and (not in_quot2 and not in_quot1):
+                    elif c2 == ">" and (not in_quot2 and not in_quot1):
                         found = True
                         break
 
@@ -285,14 +295,14 @@ def _html_split(s):
                     break
                 else:
                     # Append the tag.
-                    L.append(s[i:i2 + 1])
+                    L.append(s[i : i2 + 1])
                     i = i2 + 1
 
                 # Check whether we found a special ignore tag, eg '<script>'
                 tagi = _ignore_tag_index(s, orig_i)
                 if tagi >= 0:
                     # It's an ignore tag.  Scan for the end tag.
-                    i2 = s_lower.find('<' + _IGNORE_TAGS[tagi][1], i)
+                    i2 = s_lower.find("<" + _IGNORE_TAGS[tagi][1], i)
                     if i2 < 0:
                         # No end tag.  Append the rest as text.
                         L.append(s[i2:])
@@ -304,7 +314,7 @@ def _html_split(s):
                         i = i2
         else:
             # Not a left bracket, append text up to next left bracket.
-            i2 = s.find('<', i)
+            i2 = s.find("<", i)
             if i2 < 0:
                 # No left brackets, append the rest as text.
                 L.append(s[i:])
@@ -314,6 +324,7 @@ def _html_split(s):
             i = i2
 
     return L
+
 
 def _shlex_split(s):
     """
@@ -354,7 +365,7 @@ def _shlex_split(s):
             c = re.compile(r'[^ \t\n\r\f\v"\']+\s*\=\s*"[^"]*"')
             m = c.match(s, i)
             if m:
-                ans.append(s[i:m.end()])
+                ans.append(s[i : m.end()])
                 i = m.end()
                 continue
 
@@ -362,7 +373,7 @@ def _shlex_split(s):
             c = re.compile(r'[^ \t\n\r\f\v"\']+\s*\=\s*\'[^\']*\'')
             m = c.match(s, i)
             if m:
-                ans.append(s[i:m.end()])
+                ans.append(s[i : m.end()])
                 i = m.end()
                 continue
 
@@ -370,7 +381,7 @@ def _shlex_split(s):
             c = re.compile(r'[^ \t\n\r\f\v"\']+\s*\=\s*[^ \t\n\r\f\v"\']*')
             m = c.match(s, i)
             if m:
-                ans.append(s[i:m.end()])
+                ans.append(s[i : m.end()])
                 i = m.end()
                 continue
 
@@ -378,7 +389,7 @@ def _shlex_split(s):
             c = re.compile(r'[^ \t\n\r\f\v"\']+')
             m = c.match(s, i)
             if m:
-                ans.append(s[i:m.end()])
+                ans.append(s[i : m.end()])
                 i = m.end()
                 continue
 
@@ -386,13 +397,13 @@ def _shlex_split(s):
             # has malformed quotes inside a tag.  Add leading quotes
             # and spaces to the previous field until we see something.
             subadd = []
-            while i < len(s) and s[i] in ['"', "'", ' ', '\t']:
+            while i < len(s) and s[i] in ['"', "'", " ", "\t"]:
                 subadd.append(s[i])
                 i += 1
 
             # Add whatever we could salvage from the situation and move on.
             if len(subadd) > 0:
-                ans.append(''.join(subadd))
+                ans.append("".join(subadd))
             else:
                 # We totally failed at matching this character, so add it
                 # as a separate item and move on.
@@ -400,30 +411,80 @@ def _shlex_split(s):
 
     return ans
 
+
 def _test_shlex_split():
     """
     Unit test for L{_shlex_split}.
     """
-    assert _shlex_split('') == []
-    assert _shlex_split(' ') == [' ']
-    assert _shlex_split('a=5 b="15" name="Georgette A"') == \
-           ['a=5', ' ', 'b="15"', ' ', 'name="Georgette A"']
-    assert _shlex_split('a=cvn b=32vsd  c= 234jk\te d \t="hi"') == \
-           ['a=cvn', ' ', 'b=32vsd', '  ', 'c= 234jk', '\t', 'e', ' ',
-            'd \t="hi"']
-    assert _shlex_split(' a b c d=e f  g h i="jk" l mno = p  ' + \
-                        'qr = "st"') == \
-           [' ', 'a', ' ', 'b', ' ', 'c', ' ', 'd=e', ' ', 'f', '  ', \
-            'g', ' ', 'h', ' ', 'i="jk"', ' ', 'l', ' ', 'mno = p', \
-            '  ', 'qr = "st"']
-    assert _shlex_split('a=5 b="9"c="15 dfkdfkj "d="25"') == \
-           ['a=5', ' ', 'b="9"', 'c="15 dfkdfkj "', 'd="25"']
-    assert _shlex_split('a=5 b="9"c="15 dfkdfkj "d="25" e=4') == \
-           ['a=5', ' ', 'b="9"', 'c="15 dfkdfkj "', 'd="25"', ' ', \
-            'e=4']
-    assert _shlex_split('a=5 b=\'9\'c=\'15 dfkdfkj \'d=\'25\' e=4') == \
-           ['a=5', ' ', 'b=\'9\'', 'c=\'15 dfkdfkj \'', 'd=\'25\'', \
-            ' ', 'e=4']
+    assert _shlex_split("") == []
+    assert _shlex_split(" ") == [" "]
+    assert _shlex_split('a=5 b="15" name="Georgette A"') == [
+        "a=5",
+        " ",
+        'b="15"',
+        " ",
+        'name="Georgette A"',
+    ]
+    assert _shlex_split('a=cvn b=32vsd  c= 234jk\te d \t="hi"') == [
+        "a=cvn",
+        " ",
+        "b=32vsd",
+        "  ",
+        "c= 234jk",
+        "\t",
+        "e",
+        " ",
+        'd \t="hi"',
+    ]
+    assert _shlex_split(' a b c d=e f  g h i="jk" l mno = p  ' + 'qr = "st"') == [
+        " ",
+        "a",
+        " ",
+        "b",
+        " ",
+        "c",
+        " ",
+        "d=e",
+        " ",
+        "f",
+        "  ",
+        "g",
+        " ",
+        "h",
+        " ",
+        'i="jk"',
+        " ",
+        "l",
+        " ",
+        "mno = p",
+        "  ",
+        'qr = "st"',
+    ]
+    assert _shlex_split('a=5 b="9"c="15 dfkdfkj "d="25"') == [
+        "a=5",
+        " ",
+        'b="9"',
+        'c="15 dfkdfkj "',
+        'd="25"',
+    ]
+    assert _shlex_split('a=5 b="9"c="15 dfkdfkj "d="25" e=4') == [
+        "a=5",
+        " ",
+        'b="9"',
+        'c="15 dfkdfkj "',
+        'd="25"',
+        " ",
+        "e=4",
+    ]
+    assert _shlex_split("a=5 b='9'c='15 dfkdfkj 'd='25' e=4") == [
+        "a=5",
+        " ",
+        "b='9'",
+        "c='15 dfkdfkj '",
+        "d='25'",
+        " ",
+        "e=4",
+    ]
 
 
 def _tag_dict(s):
@@ -452,18 +513,22 @@ def _tag_dict(s):
     start = 0
     for item in d:
         end = start + len(item)
-        equals = item.find('=')
+        equals = item.find("=")
         if equals >= 0:
             # Contains an equals sign.
             (k1, k2) = (start, start + equals)
             (v1, v2) = (start + equals + 1, start + len(item))
 
             # Strip spaces.
-            while k1 < k2 and s[k1] in string.whitespace:   k1 += 1
-            while k1 < k2 and s[k2 - 1] in string.whitespace: k2 -= 1
+            while k1 < k2 and s[k1] in string.whitespace:
+                k1 += 1
+            while k1 < k2 and s[k2 - 1] in string.whitespace:
+                k2 -= 1
 
-            while v1 < v2 and s[v1] in string.whitespace:   v1 += 1
-            while v1 < v2 and s[v2 - 1] in string.whitespace: v2 -= 1
+            while v1 < v2 and s[v1] in string.whitespace:
+                v1 += 1
+            while v1 < v2 and s[v2 - 1] in string.whitespace:
+                v2 -= 1
 
             # Strip one pair of double quotes around value.
             if v1 < v2 - 1 and s[v1] == '"' and s[v2 - 1] == '"':
@@ -504,27 +569,31 @@ def _tag_dict(s):
 
     return (attrs, key_pos, value_pos)
 
+
 def _test_tag_dict():
     """
     Unit test for L{_tag_dict}.
     """
-    assert _tag_dict('') == ({}, {}, {})
-    assert _tag_dict(' \t\r \n\n \r\n  ') == ({}, {}, {})
-    assert _tag_dict('bgcolor=#ffffff text="#000000" blink') == \
-      ({'bgcolor':'#ffffff', 'text':'#000000', 'blink': None},
-       {'bgcolor':(0, 7), 'text':(16, 20), 'blink':(31, 36)},
-       {'bgcolor':(8, 15), 'text':(22, 29), 'blink':(36, 36)})
-    assert _tag_dict("bgcolor='#ffffff'text='#000000' blink") == \
-      ({'bgcolor':'#ffffff', 'text':'#000000', 'blink': None},
-       {'bgcolor':(0, 7), 'text':(17, 21), 'blink':(32, 37)},
-       {'bgcolor':(9, 16), 'text':(23, 30), 'blink':(37, 37)})
+    assert _tag_dict("") == ({}, {}, {})
+    assert _tag_dict(" \t\r \n\n \r\n  ") == ({}, {}, {})
+    assert _tag_dict('bgcolor=#ffffff text="#000000" blink') == (
+        {"bgcolor": "#ffffff", "text": "#000000", "blink": None},
+        {"bgcolor": (0, 7), "text": (16, 20), "blink": (31, 36)},
+        {"bgcolor": (8, 15), "text": (22, 29), "blink": (36, 36)},
+    )
+    assert _tag_dict("bgcolor='#ffffff'text='#000000' blink") == (
+        {"bgcolor": "#ffffff", "text": "#000000", "blink": None},
+        {"bgcolor": (0, 7), "text": (17, 21), "blink": (32, 37)},
+        {"bgcolor": (9, 16), "text": (23, 30), "blink": (37, 37)},
+    )
     s = ' \r\nbg = val text \t= "hi you" name\t e="5"\t\t\t\n'
     (a, b, c) = _tag_dict(s)
-    assert a == {'text': 'hi you', 'bg': 'val', 'e': '5', 'name': None}
+    assert a == {"text": "hi you", "bg": "val", "e": "5", "name": None}
     for key in a.keys():
-        assert s[b[key][0]:b[key][1]] == key
+        assert s[b[key][0] : b[key][1]] == key
         if a[key] != None:
-            assert s[c[key][0]:c[key][1]] == a[key]
+            assert s[c[key][0] : c[key][1]] == a[key]
+
 
 def _full_tag_extract(s):
     """
@@ -543,19 +612,20 @@ def _full_tag_extract(s):
     for i in range(1, len(L)):
         Lstart[i] = Lstart[i - 1] + len(L[i - 1])
 
-    class NotTagError(Exception): pass
+    class NotTagError(Exception):
+        pass
 
     for (i, text) in _enumerate(L):
         try:
 
             # Is it an HTML tag?
             is_tag = False
-            if len(text) >= 2 and text[0] == '<' and text[-1] == '>':
+            if len(text) >= 2 and text[0] == "<" and text[-1] == ">":
                 # Turn HTML tag text into (name, keyword_dict) tuple.
                 is_tag = True
 
             is_special = False
-            if len(text) >= 2 and (text[1] == '!' or text[1] == '?'):
+            if len(text) >= 2 and (text[1] == "!" or text[1] == "?"):
                 is_special = True
 
             if is_special:
@@ -570,37 +640,37 @@ def _full_tag_extract(s):
 
                 # Strip off '<>' and update offset.
                 orig_offset = 0
-                if len(text) >= 1 and text[0] == '<':
+                if len(text) >= 1 and text[0] == "<":
                     text = text[1:]
                     orig_offset = 1
-                if len(text) >= 1 and text[-1] == '>':
+                if len(text) >= 1 and text[-1] == ">":
                     text = text[:-1]
 
-                if len(text) > 0 and text[-1] == '/':
+                if len(text) > 0 and text[-1] == "/":
                     rslash = True
                     text = text[:-1]
                 else:
                     rslash = False
 
-                m = re.search(r'\s', text)
+                m = re.search(r"\s", text)
                 first_space = -1
                 if m:
                     first_space = m.start()
                 if first_space < 0:
-                    (name, dtext) = (text, '')
+                    (name, dtext) = (text, "")
                 else:
                     name = text[:first_space]
-                    dtext = text[first_space + 1:len(text)]
+                    dtext = text[first_space + 1 : len(text)]
 
                 # Position of dtext relative to original text.
-                dtext_offset = len(name) + 1 + orig_offset    # +1 for space.
+                dtext_offset = len(name) + 1 + orig_offset  # +1 for space.
 
                 # Lowercase everything except XML directives and comments.
-                if not name.startswith('!') and not name.startswith('?'):
+                if not name.startswith("!") and not name.startswith("?"):
                     name = name.strip().lower()
 
                 if rslash:
-                    name += '/'
+                    name += "/"
 
                 # Strip off spaces, and update dtext_offset as appropriate.
                 orig_dtext = dtext
@@ -610,10 +680,14 @@ def _full_tag_extract(s):
                 (attrs, key_pos, value_pos) = _tag_dict(dtext)
                 # Correct offsets in key_pos and value_pos.
                 for key in attrs.keys():
-                    key_pos[key] = (key_pos[key][0] + Lstart[i] + dtext_offset,
-                                      key_pos[key][1] + Lstart[i] + dtext_offset)
-                    value_pos[key] = (value_pos[key][0] + Lstart[i] + dtext_offset,
-                                      value_pos[key][1] + Lstart[i] + dtext_offset)
+                    key_pos[key] = (
+                        key_pos[key][0] + Lstart[i] + dtext_offset,
+                        key_pos[key][1] + Lstart[i] + dtext_offset,
+                    )
+                    value_pos[key] = (
+                        value_pos[key][0] + Lstart[i] + dtext_offset,
+                        value_pos[key][1] + Lstart[i] + dtext_offset,
+                    )
 
                 pos = (Lstart[i], Lstart[i] + len(L[i]))
 
@@ -689,6 +763,7 @@ class _HTMLTag:
         self.key_pos = key_pos
         self.value_pos = value_pos
 
+
 class _TextTag:
     """
     Text extracted from an HTML document by L{_full_tag_extract}.
@@ -704,22 +779,48 @@ class _TextTag:
         self.pos = pos
         self.text = text
 
+
 # -------------------------------------------------------------------
 # URL Editing
 # -------------------------------------------------------------------
 
 # Tags within which URLs may be found.
-_URL_TAGS = ['a href', 'applet archive', 'applet code',
-            'applet codebase', 'area href', 'base href',
-            'blockquote cite', 'body background', 'del cite',
-            'form action', 'frame longdesc', 'frame src',
-            'head profile', 'iframe src', 'iframe longdesc',
-            'img src', 'img ismap', 'img longdesc', 'img usemap',
-            'input src', 'ins cite', 'link href', 'object archive',
-            'object codebase', 'object data', 'object usemap',
-            'script src', 'table background', 'tbody background',
-            'td background', 'tfoot background', 'th background',
-            'thead background', 'tr background']
+_URL_TAGS = [
+    "a href",
+    "applet archive",
+    "applet code",
+    "applet codebase",
+    "area href",
+    "base href",
+    "blockquote cite",
+    "body background",
+    "del cite",
+    "form action",
+    "frame longdesc",
+    "frame src",
+    "head profile",
+    "iframe src",
+    "iframe longdesc",
+    "img src",
+    "img ismap",
+    "img longdesc",
+    "img usemap",
+    "input src",
+    "ins cite",
+    "link href",
+    "object archive",
+    "object codebase",
+    "object data",
+    "object usemap",
+    "script src",
+    "table background",
+    "tbody background",
+    "td background",
+    "tfoot background",
+    "th background",
+    "thead background",
+    "tr background",
+]
 _URL_TAGS = map(lambda s: tuple(s.split()), _URL_TAGS)
 
 
@@ -749,6 +850,7 @@ def _finditer(pattern, string):
         else:
             start += 1
 
+
 def _remove_comments(doc):
     """
     Replaces commented out characters with spaces in a CSS document.
@@ -756,34 +858,35 @@ def _remove_comments(doc):
     ans = []
     i = 0
     while True:
-        i2 = doc.find('/*', i)
+        i2 = doc.find("/*", i)
         if i2 < 0:
             ans += [doc[i:]]
             break
         ans += [doc[i:i2]]
-        i3 = doc.find('*/', i2 + 1)
+        i3 = doc.find("*/", i2 + 1)
         if i3 < 0:
             i3 = len(doc) - 2
-        ans += [' ' * (i3 - i2 + 2)]
+        ans += [" " * (i3 - i2 + 2)]
         i = i3 + 2
 
-    return ''.join(ans)
+    return "".join(ans)
+
 
 def _test_remove_comments():
     """
     Unit test for L{_remove_comments}.
     """
-    s = '/*d s kjlsdf */*//*/*//**/**/*//**/a' * 50
+    s = "/*d s kjlsdf */*//*/*//**/**/*//**/a" * 50
     assert len(_remove_comments(s)) == len(s)
-    s = '/**/' * 50 + '/*5845*/*/*//*/**/dfd' + '/*//**//'
+    s = "/**/" * 50 + "/*5845*/*/*//*/**/dfd" + "/*//**//"
     assert len(_remove_comments(s)) == len(s)
-    s = 'a/**/' * 50 + '/**//**/////***/****/*//**//*/' * 5
+    s = "a/**/" * 50 + "/**//**/////***/****/*//**//*/" * 5
     assert len(_remove_comments(s)) == len(s)
-    s = 'hi /* foo */ hello /* bar!!!!! \n\n */ there!'
-    assert _remove_comments(s) == \
-           'hi           hello                   there!'
+    s = "hi /* foo */ hello /* bar!!!!! \n\n */ there!"
+    assert _remove_comments(s) == "hi           hello                   there!"
 
-def urlextract(doc, siteurl=None, mimetype='text/html'):
+
+def urlextract(doc, siteurl=None, mimetype="text/html"):
     """
     Extract URLs from HTML or stylesheet.
 
@@ -822,13 +925,14 @@ def urlextract(doc, siteurl=None, mimetype='text/html'):
         # Match URLs within CSS stylesheet.
         # Match url(blah) or url('blah') or url("blah").
         L = _finditer(
-          r'''url\s*\(([^\r\n\("']*?)\)|''' +
-          r'''url\s*\(\s*"([^\r\n]*?)"\s*\)|''' +
-          r'''url\s*\(\s*'([^\r\n]*?)'\s*\)|''' +
-          r'''@import\s+([^ \t\r\n"';@\(\)]+)[^\r\n;@\(\)]*[\r\n;]|''' +
-          r'''@import\s+'([^ \t\r\n"';@\(\)]+)'[^\r\n;@\(\)]*[\r\n;]|''' +
-          r'''@import\s+"([^ \t\r\n"';\(\)']+)"[^\r\n;@\(\)]*[\r\n;]''',
-          doc + ';\n')
+            r"""url\s*\(([^\r\n\("']*?)\)|"""
+            + r"""url\s*\(\s*"([^\r\n]*?)"\s*\)|"""
+            + r"""url\s*\(\s*'([^\r\n]*?)'\s*\)|"""
+            + r"""@import\s+([^ \t\r\n"';@\(\)]+)[^\r\n;@\(\)]*[\r\n;]|"""
+            + r"""@import\s+'([^ \t\r\n"';@\(\)]+)'[^\r\n;@\(\)]*[\r\n;]|"""
+            + r"""@import\s+"([^ \t\r\n"';\(\)']+)"[^\r\n;@\(\)]*[\r\n;]""",
+            doc + ";\n",
+        )
 
         L = [(x.start(x.lastindex), x.end(x.lastindex)) for x in L]
         ans = []
@@ -848,10 +952,9 @@ def urlextract(doc, siteurl=None, mimetype='text/html'):
             # Handle string item (text) or tuple item (tag).
             if isinstance(item, _TextTag):
                 # Current item is text.
-                if isinstance(prev_item, _HTMLTag) and prev_item.name == \
-                   'style':
+                if isinstance(prev_item, _HTMLTag) and prev_item.name == "style":
                     # And previous item is <style>.  Process a stylesheet.
-                    temp = urlextract(item.text, siteurl, 'text/css')
+                    temp = urlextract(item.text, siteurl, "text/css")
                     # Offset indices and add to ans.
                     for j in range(len(temp)):
                         temp[j].start += item.pos[0]
@@ -862,13 +965,13 @@ def urlextract(doc, siteurl=None, mimetype='text/html'):
                     pass
             else:
                 # Current item is a tag.
-                if item.attrs.has_key('style'):
+                if item.attrs.has_key("style"):
                     # Process a stylesheet embedded in the 'style' attribute.
-                    temp = urlextract(item.attrs['style'], siteurl, 'text/css')
+                    temp = urlextract(item.attrs["style"], siteurl, "text/css")
                     # Offset indices and add to ans.
                     for j in range(len(temp)):
-                        temp[j].start += item.value_pos['style'][0]
-                        temp[j].end += item.value_pos['style'][0]
+                        temp[j].start += item.value_pos["style"][0]
+                        temp[j].end += item.value_pos["style"][0]
                     ans += temp
 
                 for (a, b) in _URL_TAGS:
@@ -882,12 +985,22 @@ def urlextract(doc, siteurl=None, mimetype='text/html'):
                         tag_attr = b
                         tag_attrs = item.attrs
                         tag_index = i
-                        tag = URLMatch(doc, start, end, siteurl, True, False, \
-                                       tag_attr, tag_attrs, tag_index, tag_name)
+                        tag = URLMatch(
+                            doc,
+                            start,
+                            end,
+                            siteurl,
+                            True,
+                            False,
+                            tag_attr,
+                            tag_attrs,
+                            tag_index,
+                            tag_name,
+                        )
                         ans.append(tag)
         # End of 'text/html' mimetype case.
     else:
-        raise ValueError('unknown MIME type: ' + repr(mimetype))
+        raise ValueError("unknown MIME type: " + repr(mimetype))
 
     # Filter the answer, removing duplicate matches.
     start_end_map = {}
@@ -897,6 +1010,7 @@ def urlextract(doc, siteurl=None, mimetype='text/html'):
             start_end_map[(item.start, item.end)] = None
             filtered_ans.append(item)
     return filtered_ans
+
 
 def _tuple_replace(s, Lindices, Lreplace):
     """
@@ -915,15 +1029,16 @@ def _tuple_replace(s, Lindices, Lreplace):
     Lindices = Lindices[:]
     Lindices.sort()
     if len(Lindices) != len(Lreplace):
-        raise ValueError('lists differ in length')
+        raise ValueError("lists differ in length")
     for i in range(len(Lindices) - 1):
         if Lindices[i][1] > Lindices[i + 1][0]:
-            raise ValueError('tuples overlap')
+            raise ValueError("tuples overlap")
         if Lindices[i][1] < Lindices[i][0]:
-            raise ValueError('invalid tuple')
-        if min(Lindices[i][0], Lindices[i][1]) < 0 or                    \
-           max(Lindices[i][0], Lindices[i][1]) >= len(s):
-            raise ValueError('bad index')
+            raise ValueError("invalid tuple")
+        if min(Lindices[i][0], Lindices[i][1]) < 0 or max(
+            Lindices[i][0], Lindices[i][1]
+        ) >= len(s):
+            raise ValueError("bad index")
 
     j = 0
     offset = 0
@@ -932,24 +1047,32 @@ def _tuple_replace(s, Lindices, Lreplace):
         len1 = Lindices[i][1] - Lindices[i][0]
         len2 = len(Lreplace[i])
 
-        ans.append(s[j:Lindices[i][0] + offset])
+        ans.append(s[j : Lindices[i][0] + offset])
         ans.append(Lreplace[i])
 
         j = Lindices[i][1]
     ans.append(s[j:])
-    return ''.join(ans)
+    return "".join(ans)
+
 
 def _test_tuple_replace():
     """
     Unit test for L{_tuple_replace}.
     """
-    assert _tuple_replace('', [], []) == ''
-    assert _tuple_replace('0123456789', [], []) == '0123456789'
-    assert _tuple_replace('0123456789', [(4, 5), (6, 9)], ['abc', 'def']) == \
-           '0123abc5def9'
-    assert _tuple_replace('01234567890123456789', \
-           [(1, 9), (13, 14), (16, 18)], ['abcd', 'efg', 'hijk']) == \
-           '0abcd9012efg45hijk89'
+    assert _tuple_replace("", [], []) == ""
+    assert _tuple_replace("0123456789", [], []) == "0123456789"
+    assert (
+        _tuple_replace("0123456789", [(4, 5), (6, 9)], ["abc", "def"]) == "0123abc5def9"
+    )
+    assert (
+        _tuple_replace(
+            "01234567890123456789",
+            [(1, 9), (13, 14), (16, 18)],
+            ["abcd", "efg", "hijk"],
+        )
+        == "0abcd9012efg45hijk89"
+    )
+
 
 def urljoin(s, L):
     """
@@ -970,8 +1093,7 @@ def urljoin(s, L):
      '<img src="foo"><a href="bar">'
 
     """
-    return _tuple_replace(s, [(x.start, x.end) for x in L], \
-                             [x.url for x in L])
+    return _tuple_replace(s, [(x.start, x.end) for x in L], [x.url for x in L])
 
 
 def examples():
@@ -1092,6 +1214,7 @@ def examples():
     """
     print examples.__doc__
 
+
 class URLMatch:
     """
     A matched URL inside an HTML document or stylesheet.
@@ -1123,9 +1246,19 @@ class URLMatch:
 
     """
 
-    def __init__(self, doc, start, end, siteurl, in_html, in_css,
-                 tag_attr=None, tag_attrs=None, tag_index=None,
-                 tag_name=None):
+    def __init__(
+        self,
+        doc,
+        start,
+        end,
+        siteurl,
+        in_html,
+        in_css,
+        tag_attr=None,
+        tag_attrs=None,
+        tag_index=None,
+        tag_name=None,
+    ):
         """
         Create a URLMatch object.
         """
@@ -1169,15 +1302,16 @@ def _cast_to_str(arg, str_class):
                         b_prime[str_class(b_key)] = str_class(b_value)
                 ans.append((str_class(a), b_prime))
             else:
-                raise ValueError('unknown argument type')
+                raise ValueError("unknown argument type")
         return ans
     else:
-        raise ValueError('unknown argument type')
+        raise ValueError("unknown argument type")
 
 
 # -------------------------------------------------------------------
 # Unit Tests: HTML <-> Data structure
 # -------------------------------------------------------------------
+
 
 def _test_tagextract(str_class=str):
     """
@@ -1191,18 +1325,26 @@ def _test_tagextract(str_class=str):
         return _cast_to_str(obj, str_class2)
 
     # Simple HTML document to test.
-    doc1 = f('\n\n<Html><BODY bgcolor=#ffffff>Hi<h1>Ho</h1><br>' +
-             '<br /><img SRc="text%5f.gif"><TAG NOshow>' +
-             '<img test="5%ff" /></body></html>\nBye!\n')
-    doc2 = f('\r<HTML><!-- Comment<a href="blah"> --><hiYa><foo>' +
-           '<test tag="5" content=6><is broken=False><yay>' +
-           '<style><><>><</style><foo bar=5>end<!-- <!-- nested --> ' +
-           '<script language="JavaScript"><>!><!_!_!-->!_-></script>')
-    doc3 = f('\r\t< html >< tag> <!--comment--> <tag a = 5> ' +
-           '<foo \r\nbg = val text \t= "hi you" name\t e="5"\t\t\t\n>')
-    doc4 = f('<?xml ??><foo><!-- <img> --><!DOCTYPE blah""/>' +
-           '<![CDATA[ more and weirder<bar> ] ][]]><![C[DATA[[>' +
-           '<abc key=value><![CDATA[to eof')
+    doc1 = f(
+        "\n\n<Html><BODY bgcolor=#ffffff>Hi<h1>Ho</h1><br>"
+        + '<br /><img SRc="text%5f.gif"><TAG NOshow>'
+        + '<img test="5%ff" /></body></html>\nBye!\n'
+    )
+    doc2 = f(
+        '\r<HTML><!-- Comment<a href="blah"> --><hiYa><foo>'
+        + '<test tag="5" content=6><is broken=False><yay>'
+        + "<style><><>><</style><foo bar=5>end<!-- <!-- nested --> "
+        + '<script language="JavaScript"><>!><!_!_!-->!_-></script>'
+    )
+    doc3 = f(
+        "\r\t< html >< tag> <!--comment--> <tag a = 5> "
+        + '<foo \r\nbg = val text \t= "hi you" name\t e="5"\t\t\t\n>'
+    )
+    doc4 = f(
+        '<?xml ??><foo><!-- <img> --><!DOCTYPE blah""/>'
+        + "<![CDATA[ more and weirder<bar> ] ][]]><![C[DATA[[>"
+        + "<abc key=value><![CDATA[to eof"
+    )
     doc5 = f('<a href="foobar/ \t="base="10" x="15"><a x="9"t="20">')
 
     # -----------------------------------------------------------------
@@ -1210,123 +1352,225 @@ def _test_tagextract(str_class=str):
     # -----------------------------------------------------------------
 
     s = doc1
-    assert s == f('').join(_html_split(s))
+    assert s == f("").join(_html_split(s))
     assert _html_split(s) == f(
-      ['\n\n', '<Html>', '<BODY bgcolor=#ffffff>', 'Hi', '<h1>', 'Ho',
-       '</h1>', '<br>', '<br />', '<img SRc="text%5f.gif">',
-       '<TAG NOshow>', '<img test="5%ff" />', '</body>', '</html>',
-       '\nBye!\n'])
+        [
+            "\n\n",
+            "<Html>",
+            "<BODY bgcolor=#ffffff>",
+            "Hi",
+            "<h1>",
+            "Ho",
+            "</h1>",
+            "<br>",
+            "<br />",
+            '<img SRc="text%5f.gif">',
+            "<TAG NOshow>",
+            '<img test="5%ff" />',
+            "</body>",
+            "</html>",
+            "\nBye!\n",
+        ]
+    )
 
     s = doc2
-    assert s == f('').join(_html_split(s))
+    assert s == f("").join(_html_split(s))
 
     # Test single quotes
     s = doc2.replace(f('"'), f("'"))
-    assert s == f('').join(_html_split(s))
+    assert s == f("").join(_html_split(s))
 
-    s = f('<!-- test weird comment <body> <html> --> <h1>Header' +
-          '</h1 value=10 a=11>')
-    assert s == f('').join(_html_split(s))
+    s = f(
+        "<!-- test weird comment <body> <html> --> <h1>Header" + "</h1 value=10 a=11>"
+    )
+    assert s == f("").join(_html_split(s))
     assert _html_split(s) == f(
-    ['<!-- test weird comment <body> <html> -->', ' ',
-     '<h1>', 'Header', '</h1 value=10 a=11>'])
+        [
+            "<!-- test weird comment <body> <html> -->",
+            " ",
+            "<h1>",
+            "Header",
+            "</h1 value=10 a=11>",
+        ]
+    )
 
-    s = f('<!-- <!-- nested messed up --> blah ok <now> what<style>hi' +
-          '<><>></style><script language="Java"><aL><>><>></script>a')
-    assert s == f('').join(_html_split(s))
+    s = f(
+        "<!-- <!-- nested messed up --> blah ok <now> what<style>hi"
+        + '<><>></style><script language="Java"><aL><>><>></script>a'
+    )
+    assert s == f("").join(_html_split(s))
     assert _html_split(s) == f(
-    ['<!-- <!-- nested messed up -->', ' blah ok ', '<now>',
-     ' what', '<style>', 'hi<><>>', '</style>',
-     '<script language="Java">', '<aL><>><>>', '</script>', 'a'])
+        [
+            "<!-- <!-- nested messed up -->",
+            " blah ok ",
+            "<now>",
+            " what",
+            "<style>",
+            "hi<><>>",
+            "</style>",
+            '<script language="Java">',
+            "<aL><>><>>",
+            "</script>",
+            "a",
+        ]
+    )
 
-    s = f('<!-- ><# -->!<!-!._-><!-- aa--> <style><tag//</style> <tag ' +
-          '<tag <! <! -> <!-- </who< <who> tag> <huh-->-</style>' +
-          '</style<style>')
-    assert s == f('').join(_html_split(s))
+    s = f(
+        "<!-- ><# -->!<!-!._-><!-- aa--> <style><tag//</style> <tag "
+        + "<tag <! <! -> <!-- </who< <who> tag> <huh-->-</style>"
+        + "</style<style>"
+    )
+    assert s == f("").join(_html_split(s))
     assert _html_split(s) == f(
-    ['<!-- ><# -->', '!', '<!-!._->', '<!-- aa-->',
-     ' ', '<style>', '<tag//', '</style>', ' ', '<tag <tag <! <! ->',
-     ' ', '<!-- </who< <who> tag> <huh-->', '-', '</style>',
-     '</style<style>'])
+        [
+            "<!-- ><# -->",
+            "!",
+            "<!-!._->",
+            "<!-- aa-->",
+            " ",
+            "<style>",
+            "<tag//",
+            "</style>",
+            " ",
+            "<tag <tag <! <! ->",
+            " ",
+            "<!-- </who< <who> tag> <huh-->",
+            "-",
+            "</style>",
+            "</style<style>",
+        ]
+    )
 
     s = doc4
-    assert s == f('').join(_html_split(s))
+    assert s == f("").join(_html_split(s))
     assert _html_split(s) == f(
-    ['<?xml ??>', '<foo>', '<!-- <img> -->', '<!DOCTYPE blah""/>',
-     '<![CDATA[ more and weirder<bar> ] ][]]>', '<![C[DATA[[>',
-     '<abc key=value>', '<![CDATA[to eof'])
+        [
+            "<?xml ??>",
+            "<foo>",
+            "<!-- <img> -->",
+            '<!DOCTYPE blah""/>',
+            "<![CDATA[ more and weirder<bar> ] ][]]>",
+            "<![C[DATA[[>",
+            "<abc key=value>",
+            "<![CDATA[to eof",
+        ]
+    )
 
     # -----------------------------------------------------------------
     # Test tagextract() and tagjoin()
     # -----------------------------------------------------------------
 
     # Test for whitespace handling in tags.
-    assert (tagextract('<a\n\t\t\t\v\rhref="a.png"\tsize=10>') ==
-            [('a', {'href': 'a.png', 'size': '10'})])
+    assert tagextract('<a\n\t\t\t\v\rhref="a.png"\tsize=10>') == [
+        ("a", {"href": "a.png", "size": "10"})
+    ]
 
     s = doc1
-    s2 = doc1.replace(f('"'), f("'"))   # Test single quotes, too.
-    assert tagextract(f('')) == []
-    assert tagextract(s) == tagextract(s2) == \
-           f(['\n\n', ('html', {}), ('body', {'bgcolor': '#ffffff'}),
-              'Hi', ('h1', {}), 'Ho', ('/h1', {}), ('br', {}),
-              ('br/', {}), ('img', {'src': 'text%5f.gif'}),
-              ('tag', {'noshow': None}), ('img/', {'test': '5%ff'}),
-              ('/body', {}), ('/html', {}), '\nBye!\n'])
-    s2 = f('\n\n<html><body bgcolor="#ffffff">Hi<h1>Ho</h1><br>' +
-           '<br /><img src="text%5f.gif"><tag noshow>' +
-           '<img test="5%ff" /></body></html>\nBye!\n')
+    s2 = doc1.replace(f('"'), f("'"))  # Test single quotes, too.
+    assert tagextract(f("")) == []
+    assert (
+        tagextract(s)
+        == tagextract(s2)
+        == f(
+            [
+                "\n\n",
+                ("html", {}),
+                ("body", {"bgcolor": "#ffffff"}),
+                "Hi",
+                ("h1", {}),
+                "Ho",
+                ("/h1", {}),
+                ("br", {}),
+                ("br/", {}),
+                ("img", {"src": "text%5f.gif"}),
+                ("tag", {"noshow": None}),
+                ("img/", {"test": "5%ff"}),
+                ("/body", {}),
+                ("/html", {}),
+                "\nBye!\n",
+            ]
+        )
+    )
+    s2 = f(
+        '\n\n<html><body bgcolor="#ffffff">Hi<h1>Ho</h1><br>'
+        + '<br /><img src="text%5f.gif"><tag noshow>'
+        + '<img test="5%ff" /></body></html>\nBye!\n'
+    )
     assert tagjoin(tagextract(s)) == s2
 
-
     doc2old = doc2
-    doc2 = f('\r<HTML><!-- Comment<a href="blah"> --><hiYa><foo>' +
-             '<test tag="5" content=6><is broken=False><yay>' +
-             '<style><><>><</style><foo bar=5>end<!-- <!-- nested --> ' +
-             '<script language="JavaScript"><>!><!_!_!-->!_-></script>')
+    doc2 = f(
+        '\r<HTML><!-- Comment<a href="blah"> --><hiYa><foo>'
+        + '<test tag="5" content=6><is broken=False><yay>'
+        + "<style><><>><</style><foo bar=5>end<!-- <!-- nested --> "
+        + '<script language="JavaScript"><>!><!_!_!-->!_-></script>'
+    )
     assert doc2old == doc2
 
     s = doc2
     assert tagextract(s) == f(
-    ['\r', ('html', {}), ('!-- Comment<a href="blah"> --', {}),
-    ('hiya', {}), ('foo', {}),
-    ('test', {'content': '6', 'tag': '5'}),
-    ('is', {'broken': 'False'}), ('yay', {}), ('style', {}), '<><>><',
-    ('/style', {}), ('foo', {'bar': '5'}), 'end',
-    ('!-- <!-- nested --', {}), ' ',
-    ('script', {'language': 'JavaScript'}), ('>!><!_!_!-->!_-', {}),
-    ('/script', {})])
+        [
+            "\r",
+            ("html", {}),
+            ('!-- Comment<a href="blah"> --', {}),
+            ("hiya", {}),
+            ("foo", {}),
+            ("test", {"content": "6", "tag": "5"}),
+            ("is", {"broken": "False"}),
+            ("yay", {}),
+            ("style", {}),
+            "<><>><",
+            ("/style", {}),
+            ("foo", {"bar": "5"}),
+            "end",
+            ("!-- <!-- nested --", {}),
+            " ",
+            ("script", {"language": "JavaScript"}),
+            (">!><!_!_!-->!_-", {}),
+            ("/script", {}),
+        ]
+    )
 
     assert tagjoin(tagextract(s)) == f(
-    '\r<html><!-- Comment<a href="blah"> --><hiya><foo><test ' +
-    'content="6" tag="5"><is broken="False"><yay><style><><>><' +
-    '</style><foo bar="5">end<!-- <!-- nested --> ' +
-    '<script language="JavaScript"><>!><!_!_!-->!_-></script>')
+        '\r<html><!-- Comment<a href="blah"> --><hiya><foo><test '
+        + 'content="6" tag="5"><is broken="False"><yay><style><><>><'
+        + '</style><foo bar="5">end<!-- <!-- nested --> '
+        + '<script language="JavaScript"><>!><!_!_!-->!_-></script>'
+    )
 
     s = doc5
     assert tagextract(s) == f(
-           [('a', {'href':'foobar/ \t=', 'base':'10', 'x':'15'}),
-            ('a', {'x':'9', 't':'20'})])
+        [
+            ("a", {"href": "foobar/ \t=", "base": "10", "x": "15"}),
+            ("a", {"x": "9", "t": "20"}),
+        ]
+    )
     assert tagjoin(tagextract(s)) == f(
-           '<a base="10" href="foobar/ \t=" x="15"><a t="20" x="9">')
-
+        '<a base="10" href="foobar/ \t=" x="15"><a t="20" x="9">'
+    )
 
     # -----------------------------------------------------------------
     # Test _full_tag_extract()
     # -----------------------------------------------------------------
 
-    for s in [doc1, doc2, doc3,
-              doc1.replace(f('"'), f("'")), doc2.replace(f('"'), f("'")),
-              doc3.replace(f('"'), f("'"))]:
+    for s in [
+        doc1,
+        doc2,
+        doc3,
+        doc1.replace(f('"'), f("'")),
+        doc2.replace(f('"'), f("'")),
+        doc3.replace(f('"'), f("'")),
+    ]:
         L = _full_tag_extract(s)
         for (i, item) in _enumerate(L):
             if isinstance(item, _HTMLTag):
                 for key in item.attrs.keys():
-                    assert s[item.key_pos[key][0]:item.key_pos[key][1]].lower()\
-                           == key
+                    assert s[item.key_pos[key][0] : item.key_pos[key][1]].lower() == key
                     if item.attrs[key] != None:
-                        assert s[item.value_pos[key][0]:item.value_pos[key][1]]  \
-                               == item.attrs[key]
+                        assert (
+                            s[item.value_pos[key][0] : item.value_pos[key][1]]
+                            == item.attrs[key]
+                        )
 
     n = 1000
     doc4 = f('<tag name = "5" value ="6afdjherknc4 cdk j" a="7" b=8/>')
@@ -1334,42 +1578,73 @@ def _test_tagextract(str_class=str):
     L = tagextract(doc4)
     assert len(L) == n
     for i in range(n):
-        assert L[i] == f([('tag/', {'name':'5', 'value':'6afdjherknc4 cdk j',
-                               'a':'7', 'b':'8'})])[0]
+        assert (
+            L[i]
+            == f(
+                [
+                    (
+                        "tag/",
+                        {
+                            "name": "5",
+                            "value": "6afdjherknc4 cdk j",
+                            "a": "7",
+                            "b": "8",
+                        },
+                    )
+                ]
+            )[0]
+        )
 
     # -----------------------------------------------------------------
     # Test tagextract() and tagjoin() with XML directives.
     # -----------------------------------------------------------------
 
     doc1 = f(
-    'a<?xml version="1.0"?>' +
-    'b<!DOCTYPE html' +
-    'PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"' +
-    '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd" >c' +
-    '<html a=b><!-- Comment <><> hi! -->' +
-    'z<![CDATA[ some content  ]]>rx' +
-    '<![C[DATA[ more and weirder ] ][]]>tt')
+        'a<?xml version="1.0"?>'
+        + "b<!DOCTYPE html"
+        + 'PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"'
+        + '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd" >c'
+        + "<html a=b><!-- Comment <><> hi! -->"
+        + "z<![CDATA[ some content  ]]>rx"
+        + "<![C[DATA[ more and weirder ] ][]]>tt"
+    )
 
     doc1join = f(
-    'a<?xml version="1.0"?>b<!DOCTYPE htmlPUBLIC "-//W3C//DTD ' +
-    'XHTML 1.0 Transitional//EN""http://www.w3.org/TR/xhtml1/DTD/' +
-    'xhtml1-transitional.dtd">c<html a="b"><!-- Comment <><> hi! ' +
-    '-->z<![CDATA[ some content  ]]>rx<![C[DATA[ more and weirder ]' +
-    ' ][]]>tt')
+        'a<?xml version="1.0"?>b<!DOCTYPE htmlPUBLIC "-//W3C//DTD '
+        + 'XHTML 1.0 Transitional//EN""http://www.w3.org/TR/xhtml1/DTD/'
+        + 'xhtml1-transitional.dtd">c<html a="b"><!-- Comment <><> hi! '
+        + "-->z<![CDATA[ some content  ]]>rx<![C[DATA[ more and weirder ]"
+        + " ][]]>tt"
+    )
 
     ans1 = f(
-    ['a', ('?xml version="1.0"?', {}), 'b',
-     ('!DOCTYPE html' +
-      'PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"' +
-      '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"', {}),
-      'c', ('html', {'a':'b'}), ('!-- Comment <><> hi! --', {}), 'z',
-      ('![CDATA[ some content  ]]', {}), 'rx',
-      ('![C[DATA[ more and weirder ] ][]]', {}), 'tt'])
+        [
+            "a",
+            ('?xml version="1.0"?', {}),
+            "b",
+            (
+                "!DOCTYPE html"
+                + 'PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"'
+                + '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"',
+                {},
+            ),
+            "c",
+            ("html", {"a": "b"}),
+            ("!-- Comment <><> hi! --", {}),
+            "z",
+            ("![CDATA[ some content  ]]", {}),
+            "rx",
+            ("![C[DATA[ more and weirder ] ][]]", {}),
+            "tt",
+        ]
+    )
 
-    assert (tagextract(f('<?xml version="1.0" encoding="utf-8" ?>')) ==
-            f([('?xml version="1.0" encoding="utf-8" ?', {})]))
-    assert (tagextract(f('<!DOCTYPE html PUBLIC etc...>')) ==
-            f([('!DOCTYPE html PUBLIC etc...', {})]))
+    assert tagextract(f('<?xml version="1.0" encoding="utf-8" ?>')) == f(
+        [('?xml version="1.0" encoding="utf-8" ?', {})]
+    )
+    assert tagextract(f("<!DOCTYPE html PUBLIC etc...>")) == f(
+        [("!DOCTYPE html PUBLIC etc...", {})]
+    )
 
     assert tagextract(doc1) == ans1
 
@@ -1379,6 +1654,7 @@ def _test_tagextract(str_class=str):
 # -------------------------------------------------------------------
 # Unit Tests: URL Parsing
 # -------------------------------------------------------------------
+
 
 def _test_urlextract(str_class=str):
     """
@@ -1391,60 +1667,92 @@ def _test_urlextract(str_class=str):
     def f(obj, str_class2=str_class):
         return _cast_to_str(obj, str_class2)
 
-    doc1 = f('urlblah, url ( blah2, url( blah3) url(blah4) ' +
-           'url("blah5") hum("blah6") url)"blah7"( url ( " blah8 " );;')
-    doc2 = f('<html><img src="a.gif" alt="b"><a href = b.html name=' +
-        '"c"><td background =  ./c.png width=100%><a value=/f.jpg>' +
-        '<img src="http://www.abc.edu/d.tga">http://www.ignore.us/' +
-        '\nhttp://www.nowhere.com <style>url(h.gif) ' +
-        'url(http://www.testdomain.com/) http://ignore.com/a' +
-        '</style><img alt="c" src = "a.gif"><img src=/i.png>')
-    doc3 = f('@import foo;\n@import bar\n@import url(\'foo2\');' +
-           '@import url(\'http://bar2\')\n@import\turl("foo!");' +
-           '@import \'foo3\'\n@import "bar3";\n@importfails;' +
-           '@import;@import\n;url(\'howdy!\')\n@import  foo5 ;' +
-           '@import  \'foo6\' \n@import  "foo7";')
-    doc4 = f('@import foo handheld;\n@import \'bar\' handheld\n' +
-             '@import url(\'foo2\') handheld; @import url(bar2) ha\n' +
-             '@import url("foo3") handheld\n')
-    doc5 = f('<html><img src="a.gif" alt="b" style="url(\'foo\')">' +
-             '<a href = b.html name="c" style="@import \'bar.css\'">')
-    doc6 = doc2.replace(f('"'), f("'"))   # Test single quotes, too.
+    doc1 = f(
+        "urlblah, url ( blah2, url( blah3) url(blah4) "
+        + 'url("blah5") hum("blah6") url)"blah7"( url ( " blah8 " );;'
+    )
+    doc2 = f(
+        '<html><img src="a.gif" alt="b"><a href = b.html name='
+        + '"c"><td background =  ./c.png width=100%><a value=/f.jpg>'
+        + '<img src="http://www.abc.edu/d.tga">http://www.ignore.us/'
+        + "\nhttp://www.nowhere.com <style>url(h.gif) "
+        + "url(http://www.testdomain.com/) http://ignore.com/a"
+        + '</style><img alt="c" src = "a.gif"><img src=/i.png>'
+    )
+    doc3 = f(
+        "@import foo;\n@import bar\n@import url('foo2');"
+        + "@import url('http://bar2')\n@import\turl(\"foo!\");"
+        + "@import 'foo3'\n@import \"bar3\";\n@importfails;"
+        + "@import;@import\n;url('howdy!')\n@import  foo5 ;"
+        + "@import  'foo6' \n@import  \"foo7\";"
+    )
+    doc4 = f(
+        "@import foo handheld;\n@import 'bar' handheld\n"
+        + "@import url('foo2') handheld; @import url(bar2) ha\n"
+        + '@import url("foo3") handheld\n'
+    )
+    doc5 = f(
+        '<html><img src="a.gif" alt="b" style="url(\'foo\')">'
+        + '<a href = b.html name="c" style="@import \'bar.css\'">'
+    )
+    doc6 = doc2.replace(f('"'), f("'"))  # Test single quotes, too.
 
     # Test CSS.
     s = doc1
-    L = urlextract(s, mimetype='text/css')
+    L = urlextract(s, mimetype="text/css")
     L2 = [x.url for x in L]
-    assert L2 == f([' blah3', 'blah4', 'blah5', ' blah8 '])
-    assert [s[x.start:x.end] == x.url for x in L].count(False) == 0
+    assert L2 == f([" blah3", "blah4", "blah5", " blah8 "])
+    assert [s[x.start : x.end] == x.url for x in L].count(False) == 0
 
     # Test CSS more.
     s = doc3
-    L = urlextract(s, mimetype='text/css')
+    L = urlextract(s, mimetype="text/css")
     L2 = [x.url for x in L]
-    assert L2 == f(['foo', 'bar', 'foo2', 'http://bar2', 'foo!',
-                    'foo3', 'bar3', 'howdy!', 'foo5', 'foo6', 'foo7'])
-    assert [s[x.start:x.end] == x.url for x in L].count(False) == 0
+    assert L2 == f(
+        [
+            "foo",
+            "bar",
+            "foo2",
+            "http://bar2",
+            "foo!",
+            "foo3",
+            "bar3",
+            "howdy!",
+            "foo5",
+            "foo6",
+            "foo7",
+        ]
+    )
+    assert [s[x.start : x.end] == x.url for x in L].count(False) == 0
 
     # Test CSS even more.
     s = doc4
-    L = urlextract(s, mimetype='text/css')
+    L = urlextract(s, mimetype="text/css")
     L2 = [x.url for x in L]
-    assert L2 == f(['foo', 'bar', 'foo2', 'bar2', 'foo3'])
-    assert [s[x.start:x.end] == x.url for x in L].count(False) == 0
+    assert L2 == f(["foo", "bar", "foo2", "bar2", "foo3"])
+    assert [s[x.start : x.end] == x.url for x in L].count(False) == 0
 
     # Test HTML.
     s = doc2
     L = urlextract(s)
     L2 = [x.url for x in L]
     L3 = [x.url for x in urlextract(doc6)]
-    ans = f(['a.gif', 'b.html', './c.png',
-             'http://www.abc.edu/d.tga', 'h.gif',
-             'http://www.testdomain.com/', 'a.gif', '/i.png'])
+    ans = f(
+        [
+            "a.gif",
+            "b.html",
+            "./c.png",
+            "http://www.abc.edu/d.tga",
+            "h.gif",
+            "http://www.testdomain.com/",
+            "a.gif",
+            "/i.png",
+        ]
+    )
     assert L2 == L3 == ans
 
     for i in range(len(L)):
-        assert s[L[i].start:L[i].end] == L[i].url
+        assert s[L[i].start : L[i].end] == L[i].url
 
     # Test HTML more.
     n = 100
@@ -1454,36 +1762,38 @@ def _test_urlextract(str_class=str):
     L4 = [x.url for x in L3]
     assert L4 == L2 * n
     for i in range(len(L3)):
-        assert s2[L3[i].start:L3[i].end] == L3[i].url
+        assert s2[L3[i].start : L3[i].end] == L3[i].url
 
     # Test HTML w/ siteurl.
-    base = f('http://www.python.org/~guido/')
+    base = f("http://www.python.org/~guido/")
     L = urlextract(s, base)
     L2 = [x.url for x in L]
     assert L2 == [urlparse.urljoin(base, x) for x in ans]
 
     # Test urljoin().
-    assert urljoin(doc1, urlextract(doc1, mimetype='text/css')) == doc1
+    assert urljoin(doc1, urlextract(doc1, mimetype="text/css")) == doc1
     assert urljoin(doc2, urlextract(doc2)) == doc2
 
     s = doc2
     L = urlextract(s)
-    L[3].url = f('FOO')
-    L[5].url = f('BAR')
-    L[7].url = f('F00!')
+    L[3].url = f("FOO")
+    L[5].url = f("BAR")
+    L[7].url = f("F00!")
     assert urljoin(s, L) == f(
-    '<html><img src="a.gif" alt="b"><a href = b.html name="c">' +
-    '<td background =  ./c.png width=100%><a value=/f.jpg>' +
-    '<img src="FOO">http://www.ignore.us/\nhttp://www.nowhere.com ' +
-    '<style>url(h.gif) url(BAR) http://ignore.com/a</style>' +
-    '<img alt="c" src = "a.gif"><img src=F00!>')
+        '<html><img src="a.gif" alt="b"><a href = b.html name="c">'
+        + "<td background =  ./c.png width=100%><a value=/f.jpg>"
+        + '<img src="FOO">http://www.ignore.us/\nhttp://www.nowhere.com '
+        + "<style>url(h.gif) url(BAR) http://ignore.com/a</style>"
+        + '<img alt="c" src = "a.gif"><img src=F00!>'
+    )
 
     # Test HTML yet more.
     s = doc5
     L = urlextract(s)
     L2 = [x.url for x in L]
-    assert L2 == f(['foo', 'a.gif', 'bar.css', 'b.html'])
-    assert [s[x.start:x.end] == x.url for x in L].count(False) == 0
+    assert L2 == f(["foo", "a.gif", "bar.css", "b.html"])
+    assert [s[x.start : x.end] == x.url for x in L].count(False) == 0
+
 
 def _python_has_unicode():
     """
@@ -1500,37 +1810,38 @@ def _python_has_unicode():
 # Unit Test Main Routine
 # -------------------------------------------------------------------
 
+
 def _test():
     """
     Unit test main routine.
     """
-    print 'Unit tests:'
+    print "Unit tests:"
     _test_remove_comments()
-    print '  _remove_comments:       OK'
+    print "  _remove_comments:       OK"
     _test_shlex_split()
-    print '  _shlex_split:           OK'
+    print "  _shlex_split:           OK"
     _test_tag_dict()
-    print '  _tag_dict:              OK'
+    print "  _tag_dict:              OK"
     _test_tuple_replace()
-    print '  _tuple_replace:         OK'
+    print "  _tuple_replace:         OK"
 
     _test_tagextract()
-    print '  tagextract*:            OK'
+    print "  tagextract*:            OK"
 
     if _python_has_unicode():
         _test_tagextract(unicode)
-        print '  tagextract (unicode)*:  OK'
+        print "  tagextract (unicode)*:  OK"
 
     _test_urlextract()
-    print '  urlextract*:            OK'
+    print "  urlextract*:            OK"
 
     if _python_has_unicode():
         _test_urlextract(unicode)
-        print '  urlextract (unicode)*:  OK'
+        print "  urlextract (unicode)*:  OK"
 
     print
-    print '* The corresponding join method has been tested as well.'
+    print "* The corresponding join method has been tested as well."
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     _test()

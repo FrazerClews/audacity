@@ -30,8 +30,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-__date__    = "2011-10-26"
-__version__ = __date__.replace('-', '.')
+__date__ = "2011-10-26"
+__version__ = __date__.replace("-", ".")
 __authors__ = """
 Christopher Schmidt,
 Uldis Bojars,
@@ -51,6 +51,7 @@ import xml.dom.minidom
 
 try:
     from lxml import etree
+
     have_lxml = True
 except:
     have_lxml = False
@@ -60,7 +61,17 @@ try:
     import pygments.lexers
     import pygments.formatters
     from pygments.lexer import RegexLexer, include, bygroups
-    from pygments.token import Text, Comment, Operator, Keyword, Name, String, Literal, Punctuation
+    from pygments.token import (
+        Text,
+        Comment,
+        Operator,
+        Keyword,
+        Name,
+        String,
+        Literal,
+        Punctuation,
+    )
+
     have_pygments = True
 except ImportError:
     print("Error importing pygments, syntax highlighting disabled")
@@ -81,29 +92,29 @@ spec_ns = None
 spec_pre = None
 specgendir = None
 ns_list = {
-    "http://www.w3.org/1999/02/22-rdf-syntax-ns#"   : "rdf",
-    "http://www.w3.org/2000/01/rdf-schema#"         : "rdfs",
-    "http://www.w3.org/2002/07/owl#"                : "owl",
-    "http://www.w3.org/2001/XMLSchema#"             : "xsd",
-    "http://rdfs.org/sioc/ns#"                      : "sioc",
-    "http://xmlns.com/foaf/0.1/"                    : "foaf",
-    "http://purl.org/dc/elements/1.1/"              : "dc",
-    "http://purl.org/dc/terms/"                     : "dct",
-    "http://purl.org/rss/1.0/modules/content/"      : "content",
-    "http://www.w3.org/2003/01/geo/wgs84_pos#"      : "geo",
-    "http://www.w3.org/2004/02/skos/core#"          : "skos",
-    "http://lv2plug.in/ns/lv2core#"                 : "lv2",
-    "http://usefulinc.com/ns/doap#"                 : "doap",
-    "http://ontologi.es/doap-changeset#"            : "dcs"
-    }
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#": "rdf",
+    "http://www.w3.org/2000/01/rdf-schema#": "rdfs",
+    "http://www.w3.org/2002/07/owl#": "owl",
+    "http://www.w3.org/2001/XMLSchema#": "xsd",
+    "http://rdfs.org/sioc/ns#": "sioc",
+    "http://xmlns.com/foaf/0.1/": "foaf",
+    "http://purl.org/dc/elements/1.1/": "dc",
+    "http://purl.org/dc/terms/": "dct",
+    "http://purl.org/rss/1.0/modules/content/": "content",
+    "http://www.w3.org/2003/01/geo/wgs84_pos#": "geo",
+    "http://www.w3.org/2004/02/skos/core#": "skos",
+    "http://lv2plug.in/ns/lv2core#": "lv2",
+    "http://usefulinc.com/ns/doap#": "doap",
+    "http://ontologi.es/doap-changeset#": "dcs",
+}
 
-rdf  = rdflib.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')
-rdfs = rdflib.Namespace('http://www.w3.org/2000/01/rdf-schema#')
-owl  = rdflib.Namespace('http://www.w3.org/2002/07/owl#')
-lv2  = rdflib.Namespace('http://lv2plug.in/ns/lv2core#')
-doap = rdflib.Namespace('http://usefulinc.com/ns/doap#')
-dcs  = rdflib.Namespace('http://ontologi.es/doap-changeset#')
-foaf = rdflib.Namespace('http://xmlns.com/foaf/0.1/')
+rdf = rdflib.Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#")
+rdfs = rdflib.Namespace("http://www.w3.org/2000/01/rdf-schema#")
+owl = rdflib.Namespace("http://www.w3.org/2002/07/owl#")
+lv2 = rdflib.Namespace("http://lv2plug.in/ns/lv2core#")
+doap = rdflib.Namespace("http://usefulinc.com/ns/doap#")
+dcs = rdflib.Namespace("http://ontologi.es/doap-changeset#")
+foaf = rdflib.Namespace("http://xmlns.com/foaf/0.1/")
 
 
 def findStatements(model, s, p, o):
@@ -170,7 +181,8 @@ def getLabel(m, urinode):
     if l:
         return getLiteralString(getObject(l))
     else:
-        return ''
+        return ""
+
 
 if have_pygments:
     # Based on sw.py by Philip Cooper
@@ -178,54 +190,68 @@ if have_pygments:
         """
         Lexer for N3 / Turtle / NT
         """
-        name = 'N3'
-        aliases = ['n3', 'turtle']
-        filenames = ['*.n3', '*.ttl', '*.nt']
-        mimetypes = ['text/rdf+n3','application/x-turtle','application/n3']
+
+        name = "N3"
+        aliases = ["n3", "turtle"]
+        filenames = ["*.n3", "*.ttl", "*.nt"]
+        mimetypes = ["text/rdf+n3", "application/x-turtle", "application/n3"]
 
         tokens = {
-            'comments': [
-                (r'(\s*#.*)', Comment)
+            "comments": [(r"(\s*#.*)", Comment)],
+            "root": [
+                include("comments"),
+                (
+                    r"(\s*@(?:prefix|base|keywords)\s*)(\w*:\s+)?(<[^> ]*>\s*\.\s*)",
+                    bygroups(Keyword, Name.Variable, Name.Namespace),
+                ),
+                (r"\s*(<[^>]*\>)", Name.Class, ("triple", "predObj")),
+                (
+                    r"(\s*[a-zA-Z_:][a-zA-Z0-9\-_:]*\s)",
+                    Name.Class,
+                    ("triple", "predObj"),
+                ),
+                (r"\s*\[\]\s*", Name.Class, ("triple", "predObj")),
             ],
-            'root': [
-                include('comments'),
-                (r'(\s*@(?:prefix|base|keywords)\s*)(\w*:\s+)?(<[^> ]*>\s*\.\s*)',bygroups(Keyword,Name.Variable,Name.Namespace)),
-                (r'\s*(<[^>]*\>)', Name.Class, ('triple','predObj')),
-                (r'(\s*[a-zA-Z_:][a-zA-Z0-9\-_:]*\s)', Name.Class, ('triple','predObj')),
-                (r'\s*\[\]\s*', Name.Class, ('triple','predObj')),
+            "triple": [(r"\s*\.\s*", Text, "#pop")],
+            "predObj": [
+                include("comments"),
+                (r"\s*a\s*", Name.Keyword, "object"),
+                (r"\s*[a-zA-Z_:][a-zA-Z0-9\-_:]*\b\s*", Name.Tag, "object"),
+                (r"\s*(<[^>]*\>)", Name.Tag, "object"),
+                (r"\s*\]\s*", Text, "#pop"),
+                (r"(?=\s*\.\s*)", Keyword, "#pop"),
             ],
-            'triple' : [
-                (r'\s*\.\s*', Text, '#pop')
+            "objList": [
+                include("comments"),
+                (r"\s*\)", Text, "#pop"),
+                include("object"),
             ],
-            'predObj': [
-                include('comments'),
-                (r'\s*a\s*', Name.Keyword, 'object'),
-                (r'\s*[a-zA-Z_:][a-zA-Z0-9\-_:]*\b\s*', Name.Tag, 'object'),
-                (r'\s*(<[^>]*\>)', Name.Tag, 'object'),
-                (r'\s*\]\s*', Text, '#pop'),
-                (r'(?=\s*\.\s*)', Keyword, '#pop'),
-            ],
-            'objList': [
-                include('comments'),
-                (r'\s*\)', Text, '#pop'),
-                include('object')
-            ],
-            'object': [
-                include('comments'),
-                (r'\s*\[', Text, 'predObj'),
-                (r'\s*<[^> ]*>', Name.Tag),
-                (r'\s*("""(?:.|\n)*?""")(\@[a-z]{2-4}|\^\^<?[a-zA-Z0-9\-\:_#/\.]*>?)?\s*', bygroups(Literal.String,Text)),
-                (r'\s*".*?[^\\]"(?:\@[a-z]{2-4}|\^\^<?[a-zA-Z0-9\-\:_#/\.]*>?)?\s*', Literal.String),
-                (r'\s*[0-9]+\.[0-9]*\s*\n?', Literal.Number),
-                (r'\s*[0-9]+\s*\n?', Literal.Number),
-                (r'\s*[a-zA-Z0-9\-_\:]+\s*', Name.Tag),
-                (r'\s*\(', Text, 'objList'),
-                (r'\s*;\s*\n?', Punctuation, '#pop'),
-                (r'\s*,\s*\n?', Punctuation),  # Added by drobilla so "," is not an error
-                (r'(?=\s*\])', Text, '#pop'),
-                (r'(?=\s*\.)', Text, '#pop'),
+            "object": [
+                include("comments"),
+                (r"\s*\[", Text, "predObj"),
+                (r"\s*<[^> ]*>", Name.Tag),
+                (
+                    r'\s*("""(?:.|\n)*?""")(\@[a-z]{2-4}|\^\^<?[a-zA-Z0-9\-\:_#/\.]*>?)?\s*',
+                    bygroups(Literal.String, Text),
+                ),
+                (
+                    r'\s*".*?[^\\]"(?:\@[a-z]{2-4}|\^\^<?[a-zA-Z0-9\-\:_#/\.]*>?)?\s*',
+                    Literal.String,
+                ),
+                (r"\s*[0-9]+\.[0-9]*\s*\n?", Literal.Number),
+                (r"\s*[0-9]+\s*\n?", Literal.Number),
+                (r"\s*[a-zA-Z0-9\-_\:]+\s*", Name.Tag),
+                (r"\s*\(", Text, "objList"),
+                (r"\s*;\s*\n?", Punctuation, "#pop"),
+                (
+                    r"\s*,\s*\n?",
+                    Punctuation,
+                ),  # Added by drobilla so "," is not an error
+                (r"(?=\s*\])", Text, "#pop"),
+                (r"(?=\s*\.)", Text, "#pop"),
             ],
         }
+
 
 def linkify(string):
     if linkmap == {}:
@@ -236,14 +262,15 @@ def linkify(string):
         # Exact match for complete string
         return linkmap[string]
 
-    rgx = re.compile('([^a-zA-Z0-9_:])(' + \
-                     '|'.join(map(re.escape, linkmap)) + \
-                     ')([^a-zA-Z0-9_:])')
+    rgx = re.compile(
+        "([^a-zA-Z0-9_:])(" + "|".join(map(re.escape, linkmap)) + ")([^a-zA-Z0-9_:])"
+    )
 
     def translateCodeLink(match):
         return match.group(1) + linkmap[match.group(2)] + match.group(3)
 
     return rgx.sub(translateCodeLink, string)
+
 
 def getComment(m, urinode, classlist, proplist, instalist):
     c = findOne(m, urinode, lv2.documentation, None)
@@ -261,7 +288,8 @@ def getComment(m, urinode, classlist, proplist, instalist):
                 code_str = pygments.highlight(
                     match_str,
                     pygments.lexers.CLexer(),
-                    pygments.formatters.HtmlFormatter())
+                    pygments.formatters.HtmlFormatter(),
+                )
                 markup = code_rgx.sub(code_str, markup, 1)
 
         # Syntax highlight all Turtle code
@@ -273,35 +301,39 @@ def getComment(m, urinode, classlist, proplist, instalist):
                     break
                 match_str = xml.sax.saxutils.unescape(code.group(1))
                 code_str = pygments.highlight(
-                    match_str,
-                    Notation3Lexer(),
-                    pygments.formatters.HtmlFormatter())
+                    match_str, Notation3Lexer(), pygments.formatters.HtmlFormatter()
+                )
                 markup = code_rgx.sub(code_str, markup, 1)
 
         # Add links to code documentation for identifiers
         markup = linkify(markup)
 
         # Transform prefixed names like eg:something into links if possible
-        rgx = re.compile('([a-zA-Z0-9_-]+):([a-zA-Z0-9_-]+)')
+        rgx = re.compile("([a-zA-Z0-9_-]+):([a-zA-Z0-9_-]+)")
         namespaces = getNamespaces(m)
+
         def translateLink(match):
-            text   = match.group(0)
+            text = match.group(0)
             prefix = match.group(1)
-            name   = match.group(2)
+            name = match.group(2)
             curie = match.group(0)
-            uri   = rdflib.URIRef(spec_ns + name)
+            uri = rdflib.URIRef(spec_ns + name)
             if prefix == spec_pre:
-                if not ((classlist and uri in classlist) or
-                        (instalist and uri in instalist) or
-                        (proplist and uri in proplist)):
+                if not (
+                    (classlist and uri in classlist)
+                    or (instalist and uri in instalist)
+                    or (proplist and uri in proplist)
+                ):
                     print("warning: Link to undefined resource <%s>\n" % text)
                 return '<a href="#%s">%s</a>' % (name, curie)
             elif prefix in namespaces:
                 return '<a href="%s">%s</a>' % (
                     namespaces[match.group(1)] + match.group(2),
-                    match.group(0))
+                    match.group(0),
+                )
             else:
                 return text
+
         markup = rgx.sub(translateLink, markup)
 
         if have_lxml:
@@ -318,7 +350,9 @@ def getComment(m, urinode, classlist, proplist, instalist):
 %s
   </body>
 </html>
-""" % str(markup.decode())
+""" % str(
+                    markup.decode()
+                )
 
                 oldcwd = os.getcwd()
                 os.chdir(specgendir)
@@ -333,25 +367,25 @@ def getComment(m, urinode, classlist, proplist, instalist):
     c = findOne(m, urinode, rdfs.comment, None)
     if c:
         text = getLiteralString(getObject(c))
-        return '<p>%s</p>' % xml.sax.saxutils.escape(text)
+        return "<p>%s</p>" % xml.sax.saxutils.escape(text)
 
-    return ''
+    return ""
 
 
 def getProperty(val, first=True):
     "Return a string representing a property value in a property table"
-    doc = ''
+    doc = ""
     if not first:
-        doc += '<tr><td></td>'  # Empty cell in header column
-    doc += '<td>%s</td></tr>\n' % val
+        doc += "<tr><td></td>"  # Empty cell in header column
+    doc += "<td>%s</td></tr>\n" % val
     return doc
 
 
 def endProperties(first):
     if first:
-        return '</tr>'
+        return "</tr>"
     else:
-        return ''
+        return ""
 
 
 def rdfsPropertyInfo(term, m):
@@ -363,14 +397,14 @@ def rdfsPropertyInfo(term, m):
     domain = ""
 
     # Find subPropertyOf information
-    rlist = ''
+    rlist = ""
     first = True
     for st in findStatements(m, term, rdfs.subPropertyOf, None):
         k = getTermLink(getObject(st), term, rdfs.subPropertyOf)
         rlist += getProperty(k, first)
         first = False
-    if rlist != '':
-        doc += '<tr><th>Sub-property of</th>' + rlist
+    if rlist != "":
+        doc += "<tr><th>Sub-property of</th>" + rlist
 
     # Domain stuff
     domains = findStatements(m, term, rdfs.domain, None)
@@ -385,9 +419,11 @@ def rdfsPropertyInfo(term, m):
                 add(classdomains, uri, term)
         else:
             if not isBlank(getObject(d)):
-                domainsdoc += getProperty(getTermLink(getObject(d), term, rdfs.domain), first)
+                domainsdoc += getProperty(
+                    getTermLink(getObject(d), term, rdfs.domain), first
+                )
         first = False
-    if (len(domainsdoc) > 0):
+    if len(domainsdoc) > 0:
         doc += "<tr><th>Domain</th>%s" % domainsdoc
 
     # Range stuff
@@ -404,9 +440,11 @@ def rdfsPropertyInfo(term, m):
                 first = False
         else:
             if not isBlank(getObject(r)):
-                rangesdoc += getProperty(getTermLink(getObject(r), term, rdfs.range), first)
+                rangesdoc += getProperty(
+                    getTermLink(getObject(r), term, rdfs.range), first
+                )
         first = False
-    if (len(rangesdoc) > 0):
+    if len(rangesdoc) > 0:
         doc += "<tr><th>Range</th>%s" % rangesdoc
 
     return doc
@@ -417,9 +455,9 @@ def parseCollection(model, node):
 
     while node:
         first = findOne(model, node, rdf.first, None)
-        rest  = findOne(model, node, rdf.rest, None)
+        rest = findOne(model, node, rdf.rest, None)
         if not first or not rest:
-            break;
+            break
 
         uris.append(getObject(first))
         node = getObject(rest)
@@ -429,11 +467,19 @@ def parseCollection(model, node):
 
 def getTermLink(uri, subject=None, predicate=None):
     uri = str(uri)
-    extra = ''
+    extra = ""
     if subject != None and predicate != None:
-        extra = 'about="%s" rel="%s" resource="%s"' % (str(subject), niceName(str(predicate)), uri)
-    if (uri.startswith(spec_ns_str)):
-        return '<a href="#%s" %s>%s</a>' % (uri.replace(spec_ns_str, ""), extra, niceName(uri))
+        extra = 'about="%s" rel="%s" resource="%s"' % (
+            str(subject),
+            niceName(str(predicate)),
+            uri,
+        )
+    if uri.startswith(spec_ns_str):
+        return '<a href="#%s" %s>%s</a>' % (
+            uri.replace(spec_ns_str, ""),
+            extra,
+            niceName(uri),
+        )
     else:
         return '<a href="%s" %s>%s</a>' % (uri, extra, niceName(uri))
 
@@ -473,21 +519,23 @@ def rdfsClassInfo(term, m):
             elif getPredicate(p) == rdfs.comment:
                 comment = getObject(p)
         if onProp != None:
-            doc += '<tr><th>Restriction on %s</th><td>' % getTermLink(onProp)
+            doc += "<tr><th>Restriction on %s</th><td>" % getTermLink(onProp)
 
-            prop_str = ''
+            prop_str = ""
             last_pred = None
             first = True
             for p in findStatements(m, r, None, None):
-                if (getPredicate(p) == owl.onProperty
+                if (
+                    getPredicate(p) == owl.onProperty
                     or getPredicate(p) == rdfs.comment
                     or (getPredicate(p) == rdf.type and getObject(p) == owl.Restriction)
-                    or getPredicate(p) == lv2.documentation):
+                    or getPredicate(p) == lv2.documentation
+                ):
                     last_pred = None
                     continue
 
                 if getPredicate(p) != last_pred:
-                    prop_str += '<tr><th>%s</th>\n' % getTermLink(getPredicate(p))
+                    prop_str += "<tr><th>%s</th>\n" % getTermLink(getPredicate(p))
                     first = True
                 if isResource(getObject(p)):
                     prop_str += getProperty(getTermLink(getObject(p)), first)
@@ -500,16 +548,16 @@ def rdfsClassInfo(term, m):
 
             prop_str += endProperties(first)
 
-            if prop_str != '':
-                doc += '<table class=\"restriction\">%s</table>\n' % prop_str
+            if prop_str != "":
+                doc += '<table class="restriction">%s</table>\n' % prop_str
             if comment != None:
                 doc += "<span>%s</span>\n" % getLiteralString(comment)
-            doc += '</td></tr>'
+            doc += "</td></tr>"
 
     # Find out about properties which have rdfs:domain of t
     d = classdomains.get(str(term), "")
     if d:
-        dlist = ''
+        dlist = ""
         first = True
         for k in d:
             dlist += getProperty(getTermLink(k), first)
@@ -519,7 +567,7 @@ def rdfsClassInfo(term, m):
     # Find out about properties which have rdfs:range of t
     r = classranges.get(str(term), "")
     if r:
-        rlist = ''
+        rlist = ""
         first = True
         for k in r:
             rlist += getProperty(getTermLink(k), first)
@@ -531,17 +579,26 @@ def rdfsClassInfo(term, m):
 
 def isSpecial(pred):
     """Return True if the predicate is "special" and shouldn't be emitted generically"""
-    return pred in [rdf.type, rdfs.range, rdfs.domain, rdfs.label, rdfs.comment, rdfs.subClassOf, rdfs.subPropertyOf, lv2.documentation]
+    return pred in [
+        rdf.type,
+        rdfs.range,
+        rdfs.domain,
+        rdfs.label,
+        rdfs.comment,
+        rdfs.subClassOf,
+        rdfs.subPropertyOf,
+        lv2.documentation,
+    ]
 
 
 def blankNodeDesc(node, m):
     properties = findStatements(m, node, None, None)
-    doc = ''
-    last_pred = ''
+    doc = ""
+    last_pred = ""
     for p in properties:
         if isSpecial(getPredicate(p)):
             continue
-        doc += '<tr>'
+        doc += "<tr>"
         doc += '<td class="blankterm">%s</td>\n' % getTermLink(getPredicate(p))
         if isResource(getObject(p)):
             doc += '<td class="blankdef">%s</td>\n' % getTermLink(getObject(p))
@@ -549,11 +606,11 @@ def blankNodeDesc(node, m):
         elif isLiteral(getObject(p)):
             doc += '<td class="blankdef">%s</td>\n' % getLiteralString(getObject(p))
         elif isBlank(getObject(p)):
-            doc += '<td class="blankdef">' + blankNodeDesc(getObject(p), m) + '</td>\n'
+            doc += '<td class="blankdef">' + blankNodeDesc(getObject(p), m) + "</td>\n"
         else:
             doc += '<td class="blankdef">?</td>\n'
-        doc += '</tr>'
-    if doc != '':
+        doc += "</tr>"
+    if doc != "":
         doc = '<table class="blankdesc">\n%s\n</table>\n' % doc
     return doc
 
@@ -569,7 +626,7 @@ def extraInfo(term, m):
             last_pred = None
             continue
         if getPredicate(p) != last_pred:
-            doc += '<tr><th>%s</th>\n' % getTermLink(getPredicate(p))
+            doc += "<tr><th>%s</th>\n" % getTermLink(getPredicate(p))
             first = True
         if isResource(getObject(p)):
             doc += getProperty(getTermLink(getObject(p), term, getPredicate(p)), first)
@@ -578,11 +635,11 @@ def extraInfo(term, m):
         elif isBlank(getObject(p)):
             doc += getProperty(str(blankNodeDesc(getObject(p), m)), first)
         else:
-            doc += getProperty('?', first)
+            doc += getProperty("?", first)
         first = False
         last_pred = getPredicate(p)
 
-    #doc += endProperties(first)
+    # doc += endProperties(first)
 
     return doc
 
@@ -593,10 +650,7 @@ def rdfsInstanceInfo(term, m):
 
     first = True
     for match in findStatements(m, term, rdf.type, None):
-        doc += getProperty(getTermLink(getObject(match),
-                                       term,
-                                       rdf.type),
-                           first)
+        doc += getProperty(getTermLink(getObject(match), term, rdf.type), first)
         first = False
 
     if doc != "":
@@ -609,7 +663,7 @@ def rdfsInstanceInfo(term, m):
 
 def owlInfo(term, m):
     """Returns an extra information that is defined about a term using OWL."""
-    res = ''
+    res = ""
 
     # Inverse properties ( owl:inverseOf )
     first = True
@@ -629,14 +683,18 @@ def owlInfo(term, m):
     res += owlTypeInfo(term, owl.DatatypeProperty, "Datatype Property")
     res += owlTypeInfo(term, owl.ObjectProperty, "Object Property")
     res += owlTypeInfo(term, owl.AnnotationProperty, "Annotation Property")
-    res += owlTypeInfo(term, owl.InverseFunctionalProperty, "Inverse Functional Property")
+    res += owlTypeInfo(
+        term, owl.InverseFunctionalProperty, "Inverse Functional Property"
+    )
     res += owlTypeInfo(term, owl.SymmetricProperty, "Symmetric Property")
 
     return res
 
+
 def isDeprecated(m, subject):
     deprecated = findOne(m, subject, owl.deprecated, None)
     return deprecated and (str(deprecated[2]).find("true") >= 0)
+
 
 def docTerms(category, list, m, classlist, proplist, instalist):
     """
@@ -648,8 +706,7 @@ def docTerms(category, list, m, classlist, proplist, instalist):
     nspre = spec_pre
     for item in list:
         t = termName(m, item)
-        if (t.startswith(spec_ns_str)) and (
-            len(t[len(spec_ns_str):].split("/")) < 2):
+        if (t.startswith(spec_ns_str)) and (len(t[len(spec_ns_str) :].split("/")) < 2):
             term = t
             t = t.split(spec_ns_str[-1])[1]
             curie = "%s:%s" % (nspre, t)
@@ -664,43 +721,46 @@ def docTerms(category, list, m, classlist, proplist, instalist):
 
         term_uri = term
 
-        doc += """<div class="specterm" id="%s" about="%s">\n<h3>%s <a href="#%s">%s</a></h3>\n""" % (t, term_uri, category, getAnchor(str(term_uri)), curie)
+        doc += (
+            """<div class="specterm" id="%s" about="%s">\n<h3>%s <a href="#%s">%s</a></h3>\n"""
+            % (t, term_uri, category, getAnchor(str(term_uri)), curie)
+        )
 
         label = getLabel(m, term)
         comment = getComment(m, term, classlist, proplist, instalist)
         is_deprecated = isDeprecated(m, term)
 
         doc += '<div class="spectermbody">'
-        if label != '' or comment != '' or is_deprecated:
+        if label != "" or comment != "" or is_deprecated:
             doc += '<div class="description">'
 
-        if label != '':
-            doc += "<div property=\"rdfs:label\" class=\"label\">%s</div>" % label
+        if label != "":
+            doc += '<div property="rdfs:label" class="label">%s</div>' % label
 
         if is_deprecated:
             doc += '<div class="warning">DEPRECATED</div>'
 
-        if comment != '':
-            doc += "<div property=\"rdfs:comment\">%s</div>" % comment
+        if comment != "":
+            doc += '<div property="rdfs:comment">%s</div>' % comment
 
-        if label != '' or comment != '' or is_deprecated:
+        if label != "" or comment != "" or is_deprecated:
             doc += "</div>"
 
         terminfo = ""
-        if category == 'Property':
+        if category == "Property":
             terminfo += owlInfo(term, m)
             terminfo += rdfsPropertyInfo(term, m)
-        if category == 'Class':
+        if category == "Class":
             terminfo += rdfsClassInfo(term, m)
-        if category == 'Instance':
+        if category == "Instance":
             terminfo += rdfsInstanceInfo(term, m)
 
         terminfo += extraInfo(term, m)
 
-        if (len(terminfo) > 0):  # to prevent empty list (bug #882)
+        if len(terminfo) > 0:  # to prevent empty list (bug #882)
             doc += '\n<table class="terminfo">%s</table>\n' % terminfo
 
-        doc += '</div>'
+        doc += "</div>"
         doc += "\n</div>\n\n"
 
     return doc
@@ -708,7 +768,7 @@ def docTerms(category, list, m, classlist, proplist, instalist):
 
 def getShortName(uri):
     uri = str(uri)
-    if ("#" in uri):
+    if "#" in uri:
         return uri.split("#")[-1]
     else:
         return uri.split("/")[-1]
@@ -716,8 +776,8 @@ def getShortName(uri):
 
 def getAnchor(uri):
     uri = str(uri)
-    if (uri.startswith(spec_ns_str)):
-        return uri[len(spec_ns_str):].replace("/", "_")
+    if uri.startswith(spec_ns_str):
+        return uri[len(spec_ns_str) :].replace("/", "_")
     else:
         return getShortName(uri)
 
@@ -728,9 +788,12 @@ def buildIndex(m, classlist, proplist, instalist=None):
     a list of props (strings)
     """
 
-    if len(classlist) == 0 and len(proplist) == 0 and (
-        not instalist or len(instalist) == 0):
-        return ''
+    if (
+        len(classlist) == 0
+        and len(proplist) == 0
+        and (not instalist or len(instalist) == 0)
+    ):
+        return ""
 
     azlist = '<dl class="index">'
 
@@ -741,7 +804,7 @@ def buildIndex(m, classlist, proplist, instalist=None):
         else:
             return '<a href="%s">%s</a>' % (str(t), str(t))
 
-    if (len(classlist) > 0):
+    if len(classlist) > 0:
         azlist += "<dt>Classes</dt><dd><ul>"
         classlist.sort()
         shown = {}
@@ -753,15 +816,16 @@ def buildIndex(m, classlist, proplist, instalist=None):
             local_subclass = False
             for p in findStatements(m, c, rdfs.subClassOf, None):
                 parent = str(p[2])
-                if parent[0:len(spec_ns_str)] == spec_ns_str:
+                if parent[0 : len(spec_ns_str)] == spec_ns_str:
                     local_subclass = True
             if local_subclass:
                 continue
 
             shown[c] = True
-            azlist += '<li>' + termLink(m, c)
+            azlist += "<li>" + termLink(m, c)
+
             def class_tree(c):
-                tree = ''
+                tree = ""
                 shown[c] = True
 
                 subclasses = []
@@ -770,34 +834,35 @@ def buildIndex(m, classlist, proplist, instalist=None):
                 subclasses.sort()
 
                 for s in subclasses:
-                    tree += '<li>' + termLink(m, s)
+                    tree += "<li>" + termLink(m, s)
                     tree += class_tree(s)
-                    tree += '</li>'
-                if tree != '':
-                    tree = '<ul>' + tree + '</ul>'
+                    tree += "</li>"
+                if tree != "":
+                    tree = "<ul>" + tree + "</ul>"
                 return tree
-            azlist += class_tree(c)
-            azlist += '</li>'
-        azlist += '</ul></dd>\n'
 
-    if (len(proplist) > 0):
+            azlist += class_tree(c)
+            azlist += "</li>"
+        azlist += "</ul></dd>\n"
+
+    if len(proplist) > 0:
         azlist += "<dt>Properties</dt><dd>"
         proplist.sort()
         props = []
         for p in proplist:
             props += [termLink(m, p)]
-        azlist += ', '.join(props) + '</dd>\n'
+        azlist += ", ".join(props) + "</dd>\n"
 
-    if (instalist != None and len(instalist) > 0):
+    if instalist != None and len(instalist) > 0:
         azlist += "<dt>Instances</dt><dd>"
         instas = []
         for i in instalist:
             p = getShortName(i)
             anchor = getAnchor(i)
             instas += ['<a href="#%s">%s</a>' % (anchor, p)]
-        azlist += ', '.join(instas) + '</dd>\n'
+        azlist += ", ".join(instas) + "</dd>\n"
 
-    azlist += '\n</dl>'
+    azlist += "\n</dl>"
     return azlist
 
 
@@ -822,23 +887,36 @@ def specInformation(m, ns):
     classlist = []
     for onetype in classtypes:
         for classStatement in findStatements(m, None, rdf.type, onetype):
-            for range in findStatements(m, None, rdfs.range, getSubject(classStatement)):
+            for range in findStatements(
+                m, None, rdfs.range, getSubject(classStatement)
+            ):
                 if not isBlank(getSubject(classStatement)):
-                    add(classranges,
+                    add(
+                        classranges,
                         str(getSubject(classStatement)),
-                        str(getSubject(range)))
-            for domain in findStatements(m, None, rdfs.domain, getSubject(classStatement)):
+                        str(getSubject(range)),
+                    )
+            for domain in findStatements(
+                m, None, rdfs.domain, getSubject(classStatement)
+            ):
                 if not isBlank(getSubject(classStatement)):
-                    add(classdomains,
+                    add(
+                        classdomains,
                         str(getSubject(classStatement)),
-                        str(getSubject(domain)))
+                        str(getSubject(domain)),
+                    )
             if not isBlank(getSubject(classStatement)):
                 klass = getSubject(classStatement)
                 if klass not in classlist and str(klass).startswith(ns):
                     classlist.append(klass)
 
     # Create a list of properties in the schema.
-    proptypes = [rdf.Property, owl.ObjectProperty, owl.DatatypeProperty, owl.AnnotationProperty]
+    proptypes = [
+        rdf.Property,
+        owl.ObjectProperty,
+        owl.DatatypeProperty,
+        owl.AnnotationProperty,
+    ]
     proplist = []
     for onetype in proptypes:
         for propertyStatement in findStatements(m, None, rdf.type, onetype):
@@ -853,7 +931,7 @@ def specProperty(m, subject, predicate):
     "Return a property of the spec."
     for c in findStatements(m, subject, predicate, None):
         return getLiteralString(getObject(c))
-    return ''
+    return ""
 
 
 def specProperties(m, subject, predicate):
@@ -867,7 +945,7 @@ def specProperties(m, subject, predicate):
 def specAuthors(m, subject):
     "Return an HTML description of the authors of the spec."
 
-    subjects = [subject];
+    subjects = [subject]
     p = findOne(m, subject, lv2.project, None)
     if p:
         subjects += [getObject(p)]
@@ -884,13 +962,13 @@ def specAuthors(m, subject):
             for j in findStatements(m, getObject(i), foaf.name, None):
                 maint.add(getLiteralString(getObject(j)))
 
-    doc = ''
+    doc = ""
 
-    devdoc = ''
+    devdoc = ""
     first = True
     for d in dev:
         if not first:
-            devdoc += ', '
+            devdoc += ", "
         devdoc += '<span class="author" property="doap:developer">%s</span>' % d
         first = False
     if len(dev) == 1:
@@ -898,11 +976,11 @@ def specAuthors(m, subject):
     elif len(dev) > 0:
         doc += '<tr><th class="metahead">Developers</th><td>%s</td></tr>' % devdoc
 
-    maintdoc = ''
+    maintdoc = ""
     first = True
     for m in maint:
         if not first:
-            maintdoc += ', '
+            maintdoc += ", "
         maintdoc += '<span class="author" property="doap:maintainer">%s</span>' % m
         first = False
     if len(maint) == 1:
@@ -913,15 +991,15 @@ def specAuthors(m, subject):
     return doc
 
 
-def releaseChangeset(m, release, prefix=''):
+def releaseChangeset(m, release, prefix=""):
     changeset = findOne(m, release, dcs.changeset, None)
     if changeset is None:
-        return ''
+        return ""
 
-    entry = ''
-    #entry = '<dd><ul>\n'
+    entry = ""
+    # entry = '<dd><ul>\n'
     for i in findStatements(m, getObject(changeset), dcs.item, None):
-        item  = getObject(i)
+        item = getObject(i)
         label = findOne(m, item, rdfs.label, None)
         if not label:
             print("error: dcs:item has no rdfs:label")
@@ -929,11 +1007,11 @@ def releaseChangeset(m, release, prefix=''):
 
         text = getLiteralString(getObject(label))
         if prefix:
-            text = prefix + ': ' + text
+            text = prefix + ": " + text
 
-        entry += '<li>%s</li>\n' % text
+        entry += "<li>%s</li>\n" % text
 
-    #entry += '</ul></dd>\n'
+    # entry += '</ul></dd>\n'
     return entry
 
 
@@ -949,19 +1027,19 @@ def specHistoryEntries(m, subject, entries={}):
 
         created = findOne(m, release, doap.created, None)
 
-        dist = findOne(m, release, doap['file-release'], None)
+        dist = findOne(m, release, doap["file-release"], None)
         if dist:
             entry = '<dt><a href="%s">Version %s</a>' % (getObject(dist), rev)
         else:
-            entry = '<dt>Version %s' % rev
-            #print("warning: doap:release has no doap:file-release")
+            entry = "<dt>Version %s" % rev
+            # print("warning: doap:release has no doap:file-release")
 
         if created:
-            entry += ' (%s)</dt>\n' % getLiteralString(getObject(created))
+            entry += " (%s)</dt>\n" % getLiteralString(getObject(created))
         else:
             entry += ' (<span class="warning">EXPERIMENTAL</span>)</dt>'
 
-        entry += '<dd><ul>\n%s' % releaseChangeset(m, release)
+        entry += "<dd><ul>\n%s" % releaseChangeset(m, release)
 
         if dist is not None:
             entries[(getObject(created), getObject(dist))] = entry
@@ -971,13 +1049,13 @@ def specHistoryEntries(m, subject, entries={}):
 
 def specHistoryMarkup(entries):
     if len(entries) > 0:
-        history = '<dl>\n'
+        history = "<dl>\n"
         for e in sorted(entries.keys(), reverse=True):
-            history += entries[e] + '</ul></dd>'
-        history += '</dl>\n'
+            history += entries[e] + "</ul></dd>"
+        history += "</dl>\n"
         return history
     else:
-        return ''
+        return ""
 
 
 def specHistory(m, subject):
@@ -1026,15 +1104,18 @@ def getInstances(model, classes, properties):
             if inst not in instances and str(inst) != spec_url:
                 instances.append(inst)
     for i in findStatements(model, None, rdf.type, None):
-        if ((not isResource(getSubject(i)))
+        if (
+            (not isResource(getSubject(i)))
             or (getSubject(i) in classes)
             or (getSubject(i) in instances)
-            or (getSubject(i) in properties)):
+            or (getSubject(i) in properties)
+        ):
             continue
         full_uri = str(getSubject(i))
-        if (full_uri.startswith(spec_ns_str)):
+        if full_uri.startswith(spec_ns_str):
             instances.append(getSubject(i))
     return instances
+
 
 def load_tags(path, docdir):
     "Build a (symbol => URI) map from a Doxygen tag file."
@@ -1047,39 +1128,41 @@ def load_tags(path, docdir):
         for e in elt.childNodes:
             if e.nodeType == xml.dom.Node.ELEMENT_NODE and e.tagName == tagname:
                 return e.firstChild.nodeValue
-        return ''
+        return ""
 
     def linkTo(sym, url):
         return '<span><a href="%s/%s">%s</a></span>' % (docdir, url, sym)
 
-    tagdoc  = xml.dom.minidom.parse(path)
-    root    = tagdoc.documentElement
+    tagdoc = xml.dom.minidom.parse(path)
+    root = tagdoc.documentElement
     linkmap = {}
     for cn in root.childNodes:
-        if (cn.nodeType == xml.dom.Node.ELEMENT_NODE
-            and cn.tagName == 'compound'
-            and cn.getAttribute('kind') != 'page'):
+        if (
+            cn.nodeType == xml.dom.Node.ELEMENT_NODE
+            and cn.tagName == "compound"
+            and cn.getAttribute("kind") != "page"
+        ):
 
-            name     = getChildText(cn, 'name')
-            filename = getChildText(cn, 'filename')
-            if not filename.endswith('.html'):
-                filename += '.html'
+            name = getChildText(cn, "name")
+            filename = getChildText(cn, "filename")
+            if not filename.endswith(".html"):
+                filename += ".html"
 
             linkmap[name] = linkTo(name, filename)
 
-            prefix = ''
-            if cn.getAttribute('kind') != 'file':
-                prefix = name + '::'
+            prefix = ""
+            if cn.getAttribute("kind") != "file":
+                prefix = name + "::"
 
-            members = cn.getElementsByTagName('member')
+            members = cn.getElementsByTagName("member")
             for m in members:
-                mname   = prefix + getChildText(m, 'name')
-                mafile  = getChildText(m, 'anchorfile')
-                manchor = getChildText(m, 'anchor')
-                linkmap[mname] = linkTo(
-                    mname, '%s#%s' % (mafile, manchor))
+                mname = prefix + getChildText(m, "name")
+                mafile = getChildText(m, "anchorfile")
+                manchor = getChildText(m, "anchor")
+                linkmap[mname] = linkTo(mname, "%s#%s" % (mafile, manchor))
 
     return linkmap
+
 
 def specgen(specloc, indir, style_uri, docdir, tags, opts, instances=False):
     """The meat and potatoes: Everything starts here."""
@@ -1104,12 +1187,12 @@ def specgen(specloc, indir, style_uri, docdir, tags, opts, instances=False):
     linkmap = load_tags(tags, docdir)
 
     m = rdflib.ConjunctiveGraph()
-    manifest_path = os.path.join(os.path.dirname(specloc), 'manifest.ttl')
+    manifest_path = os.path.join(os.path.dirname(specloc), "manifest.ttl")
     if os.path.exists(manifest_path):
-        m.parse(manifest_path, format='n3')
-    m.parse(specloc, format='n3')
+        m.parse(manifest_path, format="n3")
+    m.parse(specloc, format="n3")
 
-    bundle_path = os.path.split(specloc[specloc.find(':') + 1:])[0]
+    bundle_path = os.path.split(specloc[specloc.find(":") + 1 :])[0]
     abs_bundle_path = os.path.abspath(bundle_path)
     spec_url = getOntologyNS(m)
     spec = rdflib.URIRef(spec_url)
@@ -1120,17 +1203,19 @@ def specgen(specloc, indir, style_uri, docdir, tags, opts, instances=False):
     while not done:
         done = True
         for uri in specProperties(m, spec, rdfs.seeAlso):
-            if uri[:7] == 'file://':
+            if uri[:7] == "file://":
                 path = uri[7:]
-                if (path != os.path.abspath(specloc) and
-                    path.endswith('ttl') and
-                    path not in seeAlso):
+                if (
+                    path != os.path.abspath(specloc)
+                    and path.endswith("ttl")
+                    and path not in seeAlso
+                ):
                     seeAlso.add(path)
-                    m.parse(path, format='n3')
+                    m.parse(path, format="n3")
                     done = False
 
     spec_ns_str = spec_url
-    if (spec_ns_str[-1] != "/" and spec_ns_str[-1] != "#"):
+    if spec_ns_str[-1] != "/" and spec_ns_str[-1] != "#":
         spec_ns_str += "#"
 
     spec_ns = rdflib.Namespace(spec_ns_str)
@@ -1141,18 +1226,20 @@ def specgen(specloc, indir, style_uri, docdir, tags, opts, instances=False):
     prefixes_html = "<span>"
     for i in keys:
         uri = namespaces[i]
-        if uri.startswith('file:'):
-            continue;
+        if uri.startswith("file:"):
+            continue
         ns_list[str(uri)] = i
-        if (str(uri) == spec_url + '#' or
-            str(uri) == spec_url + '/' or
-            str(uri) == spec_url):
+        if (
+            str(uri) == spec_url + "#"
+            or str(uri) == spec_url + "/"
+            or str(uri) == spec_url
+        ):
             spec_pre = i
         prefixes_html += '<a href="%s">%s</a> ' % (uri, i)
     prefixes_html += "</span>"
 
     if spec_pre is None:
-        print('No namespace prefix for %s defined' % specloc)
+        print("No namespace prefix for %s defined" % specloc)
         sys.exit(1)
 
     ns_list[spec_ns_str] = spec_pre
@@ -1164,46 +1251,54 @@ def specgen(specloc, indir, style_uri, docdir, tags, opts, instances=False):
     instalist = None
     if instances:
         instalist = getInstances(m, classlist, proplist)
-        instalist.sort(lambda x, y: cmp(getShortName(x).lower(), getShortName(y).lower()))
+        instalist.sort(
+            lambda x, y: cmp(getShortName(x).lower(), getShortName(y).lower())
+        )
 
     azlist = buildIndex(m, classlist, proplist, instalist)
 
     # Generate Term HTML
-    termlist = docTerms('Property', proplist, m, classlist, proplist, instalist)
-    termlist = docTerms('Class', classlist, m, classlist, proplist, instalist) + termlist
+    termlist = docTerms("Property", proplist, m, classlist, proplist, instalist)
+    termlist = (
+        docTerms("Class", classlist, m, classlist, proplist, instalist) + termlist
+    )
     if instances:
-        termlist += docTerms('Instance', instalist, m, classlist, proplist, instalist)
+        termlist += docTerms("Instance", instalist, m, classlist, proplist, instalist)
 
-    template = template.replace('@NAME@', specProperty(m, spec, doap.name))
-    template = template.replace('@SHORT_DESC@', specProperty(m, spec, doap.shortdesc))
-    template = template.replace('@URI@', spec)
-    template = template.replace('@PREFIX@', spec_pre)
-    if spec_pre == 'lv2':
-        template = template.replace('@XMLNS@', '')
+    template = template.replace("@NAME@", specProperty(m, spec, doap.name))
+    template = template.replace("@SHORT_DESC@", specProperty(m, spec, doap.shortdesc))
+    template = template.replace("@URI@", spec)
+    template = template.replace("@PREFIX@", spec_pre)
+    if spec_pre == "lv2":
+        template = template.replace("@XMLNS@", "")
     else:
-        template = template.replace('@XMLNS@', '      xmlns:%s="%s"' % (spec_pre, spec_ns_str))
+        template = template.replace(
+            "@XMLNS@", '      xmlns:%s="%s"' % (spec_pre, spec_ns_str)
+        )
 
     filename = os.path.basename(specloc)
-    basename = filename[0:filename.rfind('.')]
+    basename = filename[0 : filename.rfind(".")]
 
-    template = template.replace('@STYLE_URI@', style_uri)
-    template = template.replace('@PREFIXES@', str(prefixes_html))
-    template = template.replace('@BASE@', spec_ns_str)
-    template = template.replace('@AUTHORS@', specAuthors(m, spec))
-    template = template.replace('@INDEX@', azlist)
-    template = template.replace('@REFERENCE@', termlist)
-    template = template.replace('@FILENAME@', filename)
-    template = template.replace('@HEADER@', basename + '.h')
-    template = template.replace('@HISTORY@', specHistory(m, spec))
+    template = template.replace("@STYLE_URI@", style_uri)
+    template = template.replace("@PREFIXES@", str(prefixes_html))
+    template = template.replace("@BASE@", spec_ns_str)
+    template = template.replace("@AUTHORS@", specAuthors(m, spec))
+    template = template.replace("@INDEX@", azlist)
+    template = template.replace("@REFERENCE@", termlist)
+    template = template.replace("@FILENAME@", filename)
+    template = template.replace("@HEADER@", basename + ".h")
+    template = template.replace("@HISTORY@", specHistory(m, spec))
 
-    mail_row = ''
-    if 'list_email' in opts:
+    mail_row = ""
+    if "list_email" in opts:
         mail_row = '<tr><th>Discuss</th><td><a href="mailto:%s">%s</a>' % (
-            opts['list_email'], opts['list_email'])
-        if 'list_page' in opts:
-            mail_row += ' <a href="%s">(subscribe)</a>' % opts['list_page']
-        mail_row += '</td></tr>'
-    template = template.replace('@MAIL@', mail_row)
+            opts["list_email"],
+            opts["list_email"],
+        )
+        if "list_page" in opts:
+            mail_row += ' <a href="%s">(subscribe)</a>' % opts["list_page"]
+        mail_row += "</td></tr>"
+    template = template.replace("@MAIL@", mail_row)
 
     version = specVersion(m, spec)  # (minor, micro, date)
     date_string = version[2]
@@ -1211,46 +1306,49 @@ def specgen(specloc, indir, style_uri, docdir, tags, opts, instances=False):
         date_string = "Undated"
 
     version_string = "%s.%s" % (version[0], version[1])
-    experimental = (version[0] == 0 or version[1] % 2 == 1)
+    experimental = version[0] == 0 or version[1] % 2 == 1
     if experimental:
         version_string += ' <span class="warning">EXPERIMENTAL</span>'
 
     if isDeprecated(m, rdflib.URIRef(spec_url)):
         version_string += ' <span class="warning">DEPRECATED</span>'
 
-    template = template.replace('@VERSION@', version_string)
+    template = template.replace("@VERSION@", version_string)
 
-    file_list = ''
+    file_list = ""
     see_also_files = specProperties(m, spec, rdfs.seeAlso)
     see_also_files.sort()
     for f in see_also_files:
         uri = str(f)
-        if uri[:7] == 'file://':
+        if uri[:7] == "file://":
             uri = uri[7:]
-            if uri[:len(abs_bundle_path)] == abs_bundle_path:
-                uri = uri[len(abs_bundle_path) + 1:]
+            if uri[: len(abs_bundle_path)] == abs_bundle_path:
+                uri = uri[len(abs_bundle_path) + 1 :]
             else:
                 continue  # Skip seeAlso file outside bundle
 
         entry = '<a href="%s">%s</a>' % (uri, uri)
-        if uri.endswith('.h') or uri.endswith('.hpp'):
+        if uri.endswith(".h") or uri.endswith(".hpp"):
             name = os.path.basename(uri)
             entry += ' <a href="%s">(docs)</a> ' % (
-                docdir + '/' + name.replace('.', '_8') + '.html')
-            file_list += '<li>%s</li>' % entry
-        elif not uri.endswith('.doap.ttl'):
-            file_list += '<li>%s</li>' % entry
+                docdir + "/" + name.replace(".", "_8") + ".html"
+            )
+            file_list += "<li>%s</li>" % entry
+        elif not uri.endswith(".doap.ttl"):
+            file_list += "<li>%s</li>" % entry
 
-    template = template.replace('@FILES@', file_list)
+    template = template.replace("@FILES@", file_list)
 
     comment = getComment(m, rdflib.URIRef(spec_url), classlist, proplist, instalist)
-    if comment != '':
-        template = template.replace('@COMMENT@', comment)
+    if comment != "":
+        template = template.replace("@COMMENT@", comment)
     else:
-        template = template.replace('@COMMENT@', '')
+        template = template.replace("@COMMENT@", "")
 
-    template = template.replace('@DATE@', datetime.datetime.utcnow().strftime('%F'))
-    template = template.replace('@TIME@', datetime.datetime.utcnow().strftime('%F %H:%M UTC'))
+    template = template.replace("@DATE@", datetime.datetime.utcnow().strftime("%F"))
+    template = template.replace(
+        "@TIME@", datetime.datetime.utcnow().strftime("%F %H:%M UTC")
+    )
 
     return template
 
@@ -1270,7 +1368,7 @@ def getNamespaces(m):
     """Return a prefix:URI dictionary of all namespaces seen during parsing"""
     nspaces = {}
     for prefix, uri in m.namespaces():
-        if not re.match('default[0-9]*', prefix) and not prefix == 'xml':
+        if not re.match("default[0-9]*", prefix) and not prefix == "xml":
             # Skip silly default namespaces added by rdflib
             nspaces[prefix] = uri
     return nspaces
@@ -1285,7 +1383,7 @@ def getOntologyNS(m):
         if not isBlank(getSubject(s)):
             ns = str(getSubject(s))
 
-    if (ns == None):
+    if ns == None:
         sys.exit("Impossible to get ontology's namespace")
     else:
         return ns
@@ -1308,34 +1406,44 @@ def usage():
 
 Example:
     %s lv2_foos.ttl template.html style.css lv2_foos.html ../doc -i -p foos
-""" % (script, script)
+""" % (
+        script,
+        script,
+    )
+
 
 if __name__ == "__main__":
     """Ontology specification generator tool"""
 
-    opt = optparse.OptionParser(usage=usage(),
-                                description='Write HTML documentation for an RDF ontology.')
-    opt.add_option('--list-email', type='string', dest='list_email')
-    opt.add_option('--list-page', type='string', dest='list_page')
-    opt.add_option('-i', action='store_true', dest='instances')
-    opt.add_option('-p', type='string', dest='prefix')
+    opt = optparse.OptionParser(
+        usage=usage(), description="Write HTML documentation for an RDF ontology."
+    )
+    opt.add_option("--list-email", type="string", dest="list_email")
+    opt.add_option("--list-page", type="string", dest="list_page")
+    opt.add_option("-i", action="store_true", dest="instances")
+    opt.add_option("-p", type="string", dest="prefix")
 
     (options, args) = opt.parse_args()
     opts = vars(options)
 
-    if (len(args) < 3):
+    if len(args) < 3:
         print(usage())
         sys.exit(-1)
 
     spec_pre = options.prefix
     ontology = "file:" + str(args[0])
-    indir    = args[1]
-    style    = args[2]
-    output   = args[3]
-    docdir   = None
-    tags     = None
+    indir = args[1]
+    style = args[2]
+    output = args[3]
+    docdir = None
+    tags = None
     if len(args) > 5:
         docdir = args[4]
-        tags   = args[5]
+        tags = args[5]
 
-    save(output, specgen(ontology, indir, style, docdir, tags, opts, instances=options.instances))
+    save(
+        output,
+        specgen(
+            ontology, indir, style, docdir, tags, opts, instances=options.instances
+        ),
+    )
